@@ -241,6 +241,9 @@ String SENSOR_DATA::createSoilStationJSON(float tempSoil, float humidSoil, float
 ///////////////////////////////////////
 
 SENSOR_RS485::SENSOR_RS485(){
+  relay_ON = new uint8_t[8]{0xFF, 0x05, 0x00, 0x00, 0xFF, 0x00, 0x99, 0xE4};
+  relay_OFF = new uint8_t[8]{0xFF, 0x05, 0x00, 0x00, 0x00, 0x00, 0xD8, 0x14};
+
   data_air_HUMID_TEMP = new uint8_t[8]{0x14, 0x03, 0x01, 0xF4, 0x00, 0x02, 0x86, 0xC0};
   data_air_NOISE = new uint8_t[8]{0x14, 0x03, 0x01, 0xF6, 0x00, 0x01, 0x67, 0x01};
   data_air_PM25_PM10 = new uint8_t[8]{0x14, 0x03, 0x01, 0xF7, 0x00, 0x02, 0x76, 0xC0};
@@ -265,6 +268,10 @@ SENSOR_RS485::SENSOR_RS485(){
 };
 
 SENSOR_RS485::~SENSOR_RS485() {
+  delete[] relay_ON;
+  delete[] relay_OFF;
+
+
   delete[] data_air_HUMID_TEMP;
   delete[] data_air_NOISE;
   delete[] data_air_PM25_PM10;
@@ -276,6 +283,15 @@ SENSOR_RS485::~SENSOR_RS485() {
   delete[] data_soil_NPK;
   delete[] data_soil_EC;
 };
+
+uint8_t* SENSOR_RS485::relay_turnON(){
+  return relay_ON;
+};
+
+uint8_t* SENSOR_RS485::relay_turnOFF(){
+  return relay_OFF;
+};
+
 
 uint8_t* SENSOR_RS485::getDataAIR_HUMID_TEMP(){
   return data_air_HUMID_TEMP;

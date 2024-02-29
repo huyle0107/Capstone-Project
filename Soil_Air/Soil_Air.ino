@@ -100,6 +100,10 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("Turn On relay");
+  Serial2.write(data485.relay_turnON(), 8);
+  delay(5000);
+
   Serial.println("Writing to AirStation - TEMP with data...");
   Serial2.write(data485.getDataAIR_TEMP(), 8);
   delay(1000);
@@ -439,7 +443,9 @@ void loop() {
   String publishData = data.createAirSoilStationJSON(air_TEMP,air_HUMID,air_LUX,air_ATMOSPHERE,air_NOISE,air_PM10,air_PM25,air_CO,air_CO2,air_SO2,air_NO2,air_O3,soil_TEMP, soil_HUMID, soil_PH, soil_EC, soil_N, soil_P, soil_K);
   Serial.println(publishData);
   NBIOT_publishData(AirStation,publishData);
-  delay(60000);
+  Serial.println("Turn Off relay");
+  Serial2.write(data485.relay_turnOFF(), 8);
+  delay(595000);
 }
 
 

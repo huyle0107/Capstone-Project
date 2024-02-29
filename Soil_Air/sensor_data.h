@@ -18,6 +18,9 @@ class SENSOR_DATA{
 
 class SENSOR_RS485{
   private:
+  uint8_t* relay_ON;
+  uint8_t* relay_OFF;
+
   uint8_t* data_air_HUMID_TEMP;
   uint8_t* data_air_NOISE;
   uint8_t* data_air_PM25_PM10;
@@ -43,6 +46,9 @@ class SENSOR_RS485{
   public:
   SENSOR_RS485();
   ~SENSOR_RS485();
+
+  uint8_t* relay_turnON();
+  uint8_t* relay_turnOFF();
   uint8_t* getDataAIR_HUMID_TEMP();
   uint8_t* getDataAIR_NOISE();
   uint8_t* getDataAIR_PM25_PM10();
