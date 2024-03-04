@@ -26,7 +26,7 @@ def show_frame(frame):
 
 root = tk.Tk()
 # Set the icon using PhotoImage
-root.tk.call('wm', 'iconphoto', root._w, PhotoImage(file = "E:\Documents\Capstone Project\Source code\Application Desktop\icon_app.png"))
+root.tk.call('wm', 'iconphoto', root._w, PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\Application Desktop\icon_app.png"))
 
 # Bind the F11 key to toggle full-screen
 root.bind("<F11>", toggle_fullscreen)

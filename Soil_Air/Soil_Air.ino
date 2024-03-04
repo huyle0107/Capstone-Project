@@ -9,6 +9,12 @@ SENSOR_DATA data;
 // Class Data for read value
 SENSOR_RS485 data485;
 
+void IRAM_ATTR resetModule() 
+{
+  ets_printf("reboot\n");
+  esp_restart();
+}
+
 void sendATCommand(const char* command) {
   Serial.println(command);
   //sendATCommand(command);
@@ -24,10 +30,6 @@ void waitAndReadResponse() {
   // while (!Serial1.available()) {
   // }
   delay(2000);
-  readResponse();
-}
-
-void readResponse() {
   while (Serial1.available()) {
     char c = Serial1.read();
     Serial.print(c);
@@ -68,17 +70,51 @@ void  NBIOT_ConnectMQTT(){
   sendATCommand("AT+CMQCON=0,3,\"SoilAir\",600,1,0,\"innovation\",\"Innovation_RgPQAZoA5N\"");
 }
 
+String sendPublish(const char* command){
+  Serial.println(command);
+  Serial1.write(command);
+  Serial1.write("\r"); // Gửi ký tự CR (Enter)
+
+  String response = "";
+  delay(2000);
+  while (Serial1.available()) {
+    char c = Serial1.read();
+    Serial.print(c);
+    response += c;
+  }
+  return response;
+}
+
 
 void NBIOT_publishData(const String& topic,const String& str){
+  int count = 0;
   String newStr = "";
   for (char c : str) {
     newStr += (c == '"') ? '\'' : c;
   }
   //Create MQTT string
   String mqttString = "AT+CMQPUB=0,\"" + topic + "\",1,1,0," + String(newStr.length()) + ",\"" + newStr + "\"";
-
-  // Convert String to const char* before sending
-  sendATCommand(mqttString.c_str());
+  do 
+  {
+    // Convert String to const char* before sending
+    String response = sendPublish(mqttString.c_str());
+    if (response.indexOf("OK") != -1) {
+      // Command was successful, exit the loop
+      Serial.println("SEND SUCCESSFUL");
+      break;
+    } 
+    else
+    {
+      // Command failed, wait for a moment before retrying
+      Serial.println("SEND ERROR");
+      count++;
+      if(count == 10)
+      {
+        resetModule();
+      }
+      delay(1000);
+    }
+  } while(true);
 }
 
 
@@ -89,19 +125,34 @@ void setup() {
   M5.begin(true, false, true);
   delay(50);
   M5.dis.fillpix(0x00ff00);
+  pinMode(26, OUTPUT);
 
   Serial.begin(115200, SERIAL_8N1, 3, 1);
   Serial1.begin(115200, SERIAL_8N1, 32,26);
   Serial2.begin(9600, SERIAL_8N1, 22, 19);
   delay(1000);
+
   NBIOT_Init();
   NBIOT_CheckConnection();
   NBIOT_ConnectMQTT();
 }
 
+
 void loop() {
   Serial.println("Turn On relay");
   Serial2.write(data485.relay_turnON(), 8);
+  delay(1000);
+
+  if (Serial2.available()) {    
+    uint8_t receivedData[8];
+    Serial2.readBytes(receivedData, sizeof(receivedData));  // Read the message.
+    for (int i = 0; i <8 ; i++) {
+      Serial.print("0x");
+      Serial.print(receivedData[i], HEX);
+      Serial.print(", ");
+    }
+    Serial.println();
+  }
   delay(5000);
 
   Serial.println("Writing to AirStation - TEMP with data...");
@@ -121,6 +172,7 @@ void loop() {
     Serial.println(data.floatToString(air_TEMP));
   }
 
+
   Serial.println("Writing to AirStation - HUMID with data...");
   Serial2.write(data485.getDataAIR_HUMID(), 8);
   delay(1000);
@@ -137,6 +189,7 @@ void loop() {
     air_HUMID = int16_t((receivedData[3] << 8 | receivedData[4])) / 10;
     Serial.println(data.floatToString(air_HUMID));
   }
+
 
   Serial.println("Writing to AirStation - CO with data...");
   Serial2.write(data485.getDataAIR_CO(), 8);
@@ -155,6 +208,7 @@ void loop() {
     Serial.println(data.floatToString(air_CO));
   }
   
+
   Serial.println("Writing to AirStation - CO2 with data...");
   Serial2.write(data485.getDataAIR_CO2(), 8);
   delay(1000);
@@ -171,6 +225,7 @@ void loop() {
     air_CO2 = int16_t((receivedData[3] << 8 | receivedData[4]));
     Serial.println(data.floatToString(air_CO2));
   }
+
   
   Serial.println("Writing to AirStation - SO2 with data...");
   Serial2.write(data485.getDataAIR_SO2(), 8);
@@ -187,7 +242,8 @@ void loop() {
     Serial.print("AIR SO2 =");
     air_SO2 = int16_t((receivedData[3] << 8 | receivedData[4]));
     Serial.println(data.floatToString(air_SO2));
-  }
+  }  
+
 
   Serial.println("Writing to AirStation - NO2 with data...");
   Serial2.write(data485.getDataAIR_NO2(), 8);
@@ -223,6 +279,7 @@ void loop() {
     Serial.println(data.floatToString(air_O3));
   }
 
+
   Serial.println("Writing to AirStation - PM10 with data...");
   Serial2.write(data485.getDataAIR_PM10(), 8);
   delay(1000);
@@ -240,6 +297,8 @@ void loop() {
     Serial.println(data.floatToString(air_PM10));
   }
 
+
+
   Serial.println("Writing to AirStation - PM25 with data...");
   Serial2.write(data485.getDataAIR_PM25(), 8);
   delay(1000);
@@ -256,7 +315,6 @@ void loop() {
     air_PM25 = int16_t((receivedData[3] << 8 | receivedData[4]));
     Serial.println(data.floatToString(air_PM25)); 
   }
-
   // String Publish_data;
   // Serial1.println("Writing to AirStation - TEMP and HUMID with data...");
   // Serial2.write(data485.getDataAIR_HUMID_TEMP(), 8);
@@ -296,7 +354,6 @@ void loop() {
     air_NOISE = int16_t((receivedData[3] << 8 | receivedData[4])) / 10;
     Serial.println(data.floatToString(air_NOISE));
   }
-
   // Serial1.println("Writing to AirStation - PM2.5 and PM10 with data...");
   // Serial2.write(data485.getDataAIR_PM25_PM10(), 8);
   // delay(1000);
@@ -336,6 +393,7 @@ void loop() {
     Serial.println(data.floatToString(air_ATMOSPHERE));
   }
 
+ 
   Serial.println("Writing to AirStation - LUX with data...");
   Serial2.write(data485.getDataAIR_LUX(), 8);
   delay(1000);
@@ -374,6 +432,7 @@ void loop() {
     Serial.println(data.floatToString(soil_PH));
   }
 
+
   Serial.println("Writing to SoilStation - TEMP and HUMID with data...");
   Serial2.write(data485.getDataSOIL_HUMID_TEMP(), 8);
   delay(1000);
@@ -394,6 +453,7 @@ void loop() {
     soil_HUMID = int16_t((receivedData[3] << 8 | receivedData[4])) / 10;
     Serial.println(data.floatToString(soil_HUMID));
   }
+
 
   Serial.println("Writing to SoilStation - NPK with data...");
   Serial2.write(data485.getDataSOIL_NPK(), 8);
@@ -420,6 +480,7 @@ void loop() {
     Serial.println(data.floatToString(soil_K));
   }
 
+
   Serial.println("Writing to SoilStation - EC with data...");
   Serial2.write(data485.getDataSOIL_EC(), 8);
   delay(1000);
@@ -436,16 +497,30 @@ void loop() {
     soil_EC = int16_t((receivedData[3] << 8 | receivedData[4]));
     Serial.println(data.floatToString(soil_EC));
   }
+
   // publishData = data.createSoilStationJSON(soil_TEMP, soil_HUMID, soil_PH, soil_EC, soil_N, soil_P, soil_K);
   // Serial.println(publishData);
   // NBIOT_publishData(SoilStation,publishData);
   
+  Serial.println("Turn Off relay");
+  Serial2.write(data485.relay_turnOFF(), 8);
+  delay(1000);
+  if (Serial2.available()) {    
+    uint8_t receivedData[8];
+    Serial2.readBytes(receivedData, sizeof(receivedData));  // Read the message.
+    for (int i = 0; i <8 ; i++) {
+      Serial.print("0x");
+      Serial.print(receivedData[i], HEX);
+      Serial.print(", ");
+    }
+    Serial.println();
+  }
+
   String publishData = data.createAirSoilStationJSON(air_TEMP,air_HUMID,air_LUX,air_ATMOSPHERE,air_NOISE,air_PM10,air_PM25,air_CO,air_CO2,air_SO2,air_NO2,air_O3,soil_TEMP, soil_HUMID, soil_PH, soil_EC, soil_N, soil_P, soil_K);
   Serial.println(publishData);
   NBIOT_publishData(AirStation,publishData);
-  Serial.println("Turn Off relay");
-  Serial2.write(data485.relay_turnOFF(), 8);
-  delay(595000);
+  // delay(10000);
+  delay(576000);
 }
 
 

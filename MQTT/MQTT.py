@@ -2,6 +2,8 @@ import paho.mqtt.client as mqtt
 import time
 import json
 import requests
+import pytz
+from datetime import datetime
 
 MQTT_SERVER = "mqttserver.tk"
 MQTT_PORT = 1883
@@ -20,17 +22,21 @@ def mqtt_subscribed(client, userdata, mid, granted_qos):
     print("\nSubscribed to Topic!!!")
 
 def mqtt_recv_message(client, userdata, message):
-    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    vietnam_time = datetime.utcnow().astimezone(pytz.timezone('Asia/Ho_Chi_Minh'))
+    current_time = vietnam_time.strftime("%H:%M %d-%m-%Y")
+
+    print("Thời gian hiện tại ở Việt Nam:", current_time)
+
+    # current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     payload_str = message.payload.decode('utf-8')
-    payload_str = payload_str.replace("'", '"')
-    try:        
-        payload = json.loads(payload_str)
+    payload_str = payload_str.replace("'", '"') 
+    payload = json.loads(payload_str)
+    print(f"\nReceived ------ [{current_time}] ------ Payload: {payload}\n")
 
-        print(f"\nReceived ------ [{current_time}] ------ Payload: {payload}")
-
+    try:       
         for i in range(len(payload['sensors'])):
-            print(f"\n{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id'].upper()} --- {float(payload['sensors'][i]['value']):.2f}")
+            print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id'].upper()} --- {float(payload['sensors'][i]['value']):.2f}")
 
         for i in range(len(payload['sensors'])):
             try:
@@ -44,7 +50,19 @@ def mqtt_recv_message(client, userdata, message):
                 break
             
     except Exception as e:
-        print(f"\nError format JSON\n")
+        for i in range(len(payload['sensors'])):
+            print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['sensor_id'].upper()} --- {float(payload['sensors'][i]['sensor_value']):.2f}")
+
+        for i in range(len(payload['sensors'])):
+            try:
+                requests.post("http://103.163.25.68:5678/sensor", 
+                            data = {'station_id':   payload["station_id"],
+                                    'station_name': payload["station_name"],
+                                    'sensor_id':    payload["sensors"][i]["sensor_id"].upper(),
+                                    'sensor_value':  "{:.2f}".format(float(payload["sensors"][i]["sensor_value"]))})
+            except Exception as e:
+                print(f"\nError subscribing to topic\n")
+                break
         
     # value = requests.get(f"http://103.163.25.68:5678/{payload['station_id']}/{payload['station_name']}")
     # a = json.loads(value.text)

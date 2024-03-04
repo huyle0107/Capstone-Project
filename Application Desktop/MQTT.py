@@ -1,7 +1,8 @@
 import paho.mqtt.client as mqtt
-import time
 import json
 import requests
+import pytz
+from datetime import datetime
 
 class MQTTHelper:
 
@@ -24,7 +25,8 @@ class MQTTHelper:
         print("\nSubscribed to Topic!!!")
 
     def mqtt_recv_message(self, client, userdata, message):
-        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        vietnam_time = datetime.utcnow().astimezone(pytz.timezone('Asia/Ho_Chi_Minh'))
+        current_time = vietnam_time.strftime("%Y-%m-%d %H:%M:%S")
 
         payload_str = message.payload.decode('utf-8')
         payload_str = payload_str.replace("'", '"')
