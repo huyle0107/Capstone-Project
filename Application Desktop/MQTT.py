@@ -1,7 +1,8 @@
 import paho.mqtt.client as mqtt
-import time
 import json
 import requests
+import pytz
+from datetime import datetime
 
 class MQTTHelper:
 
@@ -10,41 +11,47 @@ class MQTTHelper:
     MQTT_USERNAME = "innovation"
     MQTT_PASSWORD = "Innovation_RgPQAZoA5N"
 
-    MQTT_TOPIC_SUB_AIR = "/innovation/airmonitoring/WSNs"
+    MQTT_TOPIC_SUB_AIR_SOIL = "/innovation/airmonitoring/WSNs"
     MQTT_TOPIC_SUB_WATER = "/innovation/watermonitoring/WSNs"
-    MQTT_TOPIC_SUB_SOIL = "/innovation/soilmonitoring/WSNs"
 
     recvCallBack = None
 
     def mqtt_connected(self, client, userdata, flags, rc):
         print("Connected succesfully!!")
-        client.subscribe(self.MQTT_TOPIC_SUB_SOIL)
+        client.subscribe(self.MQTT_TOPIC_SUB_AIR_SOIL)
         client.subscribe(self.MQTT_TOPIC_SUB_WATER)
-        client.subscribe(self.MQTT_TOPIC_SUB_AIR)
-        
+
     def mqtt_subscribed(self, client, userdata, mid, granted_qos):
-        print("Subscribed to Topic!!!")
+        print("\nSubscribed to Topic!!!")
 
     def mqtt_recv_message(self, client, userdata, message):
-        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        vietnam_time = datetime.utcnow().astimezone(pytz.timezone('Asia/Ho_Chi_Minh'))
+        current_time = vietnam_time.strftime("%Y-%m-%d %H:%M:%S")
 
         payload_str = message.payload.decode('utf-8')
         payload_str = payload_str.replace("'", '"')
-        payload = json.loads(payload_str)
+        try:        
+            payload = json.loads(payload_str)
 
-        for i in range(len(payload["sensors"])):
-            requests.post("http://172.28.182.70:5000/sensor", 
-                        data={'station_id':   payload["station_id"],
-                                'station_name': payload["station_name"],
-                                'sensor_id':    payload["sensors"][i]["sensor_id"].upper(),
-                                'sensor_value':  "{:.2f}".format(float(payload["sensors"][i]["sensor_value"]))})
+            print(f"\nReceived ------ [{current_time}] ------ Payload: {payload}")
 
-        print("\nReceived ----------[", current_time, "]---------- ", payload)
+            for i in range(len(payload['sensors'])):
+                print(f"\n{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id'].upper()} --- {float(payload['sensors'][i]['value']):.2f}")
 
-        for sensor in payload['sensors']:
-            print(f"\n{payload['station_id']} --- {payload['station_name']} --- {sensor['sensor_id']} --- {sensor['sensor_value']}")
-
-
+            for i in range(len(payload['sensors'])):
+                try:
+                    requests.post("http://103.163.25.68:5678/sensor", 
+                                data = {'station_id':   payload["station_id"],
+                                        'station_name': payload["station_name"],
+                                        'sensor_id':    payload["sensors"][i]["id"].upper(),
+                                        'sensor_value':  "{:.2f}".format(float(payload["sensors"][i]["value"]))})
+                except Exception as e:
+                    print(f"\nError subscribing to topic\n")
+                    break
+                
+        except Exception as e:
+            print(f"\nError format JSON\n")
+            
     def __init__(self):
 
         self.mqttClient = mqtt.Client()
@@ -57,6 +64,6 @@ class MQTTHelper:
         self.mqttClient.on_message = self.mqtt_recv_message
 
         self.mqttClient.loop_start()
-
+    
     def setRecvCallBack(self, func):
         self.recvCallBack = func
