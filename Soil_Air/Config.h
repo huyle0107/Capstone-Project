@@ -1,5 +1,5 @@
 #define AirStation "/innovation/airmonitoring/WSNs"
-#define SoilStation "/innovation/soilmonitoring/WSNs"
+#define SoilStation "/innovation/soilmonitoring/WSNs" 
 
 #define SerialMon         Serial
 #define SerialNBIOT       Serial1

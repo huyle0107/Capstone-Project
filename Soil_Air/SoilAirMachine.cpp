@@ -1,4 +1,3 @@
-#include "soc/rtc.h"
 #include"SoilAirMachine.h"
 
 
@@ -8,11 +7,11 @@ SENSOR_DATA data;
 SENSOR_RS485 data485;
 String publishData; 
 
-State state =  RELAYON;
+State state =  INIT;
 State pre_state = state;
 int count_fail = 0;
-float air_TEMP = 0, air_HUMID = 0, air_NOISE = 0, air_PM25 = 0, air_PM10 = 0, air_ATMOSPHERE = 0, air_LUX = 0, air_CO = 0, air_CO2 = 0, air_SO2 = 0, air_NO2 = 0, air_O3 = 0;
-float soil_PH = 0, soil_TEMP = 0, soil_HUMID = 0, soil_N = 0, soil_P = 0, soil_K= 0, soil_EC =0;
+float air_TEMP = 0,air_HUMID = 0, air_NOISE = 0, air_PM25 = 0, air_PM10 = 0, air_ATMOSPHERE = 0, air_LUX = 0, air_CO = 0, air_CO2 = 0, air_SO2 = 0, air_NO2 = 0, air_O3 = 0;
+float soil_PH = 0, soil_TEMP = 0, soil_HUMID = 0, soil_N = 0, soil_P = 0, soil_K= 0, soil_EC = 0;
 
 void SoilAirStateMachine(){
   switch(state){
@@ -21,7 +20,7 @@ void SoilAirStateMachine(){
               SerialNBIOT.begin(NBIOT_baudrate, SERIAL_8N1, NBIOT_RX,NBIOT_TX);
               Serial485.begin(RS485_baudrate, SERIAL_8N1, RS485_RX, RS485_TX);
               setTimer1(timeRead);
-              state = RELAYON;     
+              state = RELAYON;
               break;
     case RELAYON:
               SerialMon.println("Turn On relay");
@@ -74,11 +73,11 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   SerialMon.print("AIR TEMP =");
-                  air_TEMP = int16_t((receivedData[5] << 8 | receivedData[6])) / 10;
+                  air_TEMP = int16_t((receivedData[5] << 8 | receivedData[6])) / 10.0;
                   SerialMon.println(data.floatToString(air_TEMP));
                   
                   SerialMon.print("AIR HUMIDITY =");
-                  air_HUMID = int16_t((receivedData[3] << 8 | receivedData[4])) / 10;
+                  air_HUMID = int16_t((receivedData[3] << 8 | receivedData[4])) / 10.0;
                   SerialMon.println(data.floatToString(air_HUMID));
                   state = READ_AIR_NOISE;
                 }
@@ -95,7 +94,7 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   SerialMon.print("AIR NOISE =");
-                  air_NOISE = int16_t((receivedData[3] << 8 | receivedData[4])) / 10;
+                  air_NOISE = int16_t((receivedData[3] << 8 | receivedData[4])) / 10.0;
                   SerialMon.println(data.floatToString(air_NOISE));
                   state = READ_AIR_PM25_PM10;
                 }
@@ -131,7 +130,7 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   SerialMon.print("AIR ATMOSPHERE =");
-                  air_ATMOSPHERE = int16_t((receivedData[3] << 8 | receivedData[4])) / 10;
+                  air_ATMOSPHERE = int16_t((receivedData[3] << 8 | receivedData[4])) / 10.0;
                   SerialMon.println(data.floatToString(air_ATMOSPHERE));
                   state = READ_AIR_ILLUMINANCE;
                 }
@@ -244,11 +243,11 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   SerialMon.print("SOIL TEMP =");
-                  soil_TEMP = int16_t((receivedData[5] << 8 | receivedData[6])) / 10;
+                  soil_TEMP = int16_t((receivedData[5] << 8 | receivedData[6])) / 10.0;
                   SerialMon.println(data.floatToString(soil_TEMP));
                   
                   SerialMon.print("SOIL HUMIDITY =");
-                  soil_HUMID = int16_t((receivedData[3] << 8 | receivedData[4])) / 10;
+                  soil_HUMID = int16_t((receivedData[3] << 8 | receivedData[4])) / 10.0;
                   SerialMon.println(data.floatToString(soil_HUMID));
                   state = READ_SOIL_EC;
                 }        
@@ -280,7 +279,7 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   SerialMon.print("SOIL PH =");
-                  soil_PH = int16_t((receivedData[3] << 8 | receivedData[4])) / 100;
+                  soil_PH = int16_t((receivedData[3] << 8 | receivedData[4])) / 100.0;
                   SerialMon.println(data.floatToString(soil_PH));
                   state = READ_SOIL_NPK;
                 }  
@@ -449,21 +448,24 @@ void SoilAirStateMachine(){
               NBIOT_publishData(AirStation,publishData);
               state = WAIT_RESPONSE;
               setTimer(timeWaitResponse);
+              // state = SYSTEMOFF;
+              // setTimer(timeSleep);             
               break;
 
     case WAIT_RESPONSE:
-              if(getResponse){
+              if(getResponse == true){
+                SerialMon.println("Receive callback");
                 state = SYSTEMOFF;
                 setTimer(timeSleep);
               }
+              NBIOT_ListenCallback();
               if(timer_flag){
-                state = NBIOT_SEND;
-                count_fail++;
-                if(count_fail == 3) resetModule;
+                 resetModule();
               }
               break;
 
     case SYSTEMOFF:
+              NBIOT_clearBuffer();
               if(timer_flag){
                 setTimer1(timeRead);
                 state = RELAYON;
