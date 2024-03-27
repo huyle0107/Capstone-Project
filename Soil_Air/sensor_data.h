@@ -10,7 +10,7 @@ class SENSOR_DATA{
     String createAirJSON(float value, String ID);
     String createAirStationJSON(float temp, float humid, float illuminance, float atmosphere, 
                                         float noise, float pm10, float pm25, float co,float co2, float so2, float no2, float o3);
-    String createAirSoilStationJSON(float temp, float humid, float illuminance, float atmosphere, 
+    String createAirSoilStationJSON(float voltage, float voltage1, float power, float temp, float humid, float illuminance, float atmosphere, 
                                         float noise, float pm10, float pm25, float co,float co2, float so2, float no2, float o3,float tempSoil, float humidSoil, float ph, float ec, float nito, float photpho, float kali);
     String createSoilStationJSON(float tempSoil, float humidSoil, float ph, float ec, float nito, float photpho, float kali);
 };
@@ -20,6 +20,9 @@ class SENSOR_RS485{
   private:
   uint8_t* relay_ON;
   uint8_t* relay_OFF;
+
+  uint8_t* read_Voltage;
+  uint8_t* read_Current;
 
   uint8_t* data_air_HUMID_TEMP;
   uint8_t* data_air_NOISE;
@@ -49,6 +52,10 @@ class SENSOR_RS485{
 
   uint8_t* relay_turnON();
   uint8_t* relay_turnOFF();
+  
+  uint8_t* read_Vol();
+  uint8_t* read_Cur();
+
   uint8_t* getDataAIR_HUMID_TEMP();
   uint8_t* getDataAIR_NOISE();
   uint8_t* getDataAIR_PM25_PM10();

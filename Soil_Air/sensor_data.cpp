@@ -86,7 +86,7 @@ String SENSOR_DATA::createAirStationJSON(float temp, float humid, float illumina
   return jsonString;
 }
 
-String SENSOR_DATA::createAirSoilStationJSON(float temp, float humid, float illuminance, float atmosphere, 
+String SENSOR_DATA::createAirSoilStationJSON(float voltage, float voltage1, float power, float temp, float humid, float illuminance, float atmosphere, 
                                         float noise, float pm10, float pm25, float co,float co2, float so2, float no2, float o3,float tempSoil, float humidSoil, float ph, float ec, float nito, float photpho, float kali) {
   DynamicJsonDocument doc(1024);
 
@@ -94,6 +94,20 @@ String SENSOR_DATA::createAirSoilStationJSON(float temp, float humid, float illu
   doc["station_name"] = "AIR 0001";
 
   JsonArray sensors = doc.createNestedArray("sensors");
+
+
+  JsonObject voltage_sensor = sensors.createNestedObject();
+  voltage_sensor["id"] = "vol_0001";
+  voltage_sensor["value"] = floatToString(voltage);
+
+  JsonObject voltage1_sensor = sensors.createNestedObject();
+  voltage1_sensor["id"] = "vol_0002";
+  voltage1_sensor["value"] = floatToString(voltage1);
+
+  JsonObject power_sensor = sensors.createNestedObject();
+  power_sensor["id"] = "power_0001";
+  power_sensor["value"] = floatToString(power);
+
 
   //Sensors for Air-Station
   JsonObject temp_sensor = sensors.createNestedObject();
@@ -244,6 +258,9 @@ SENSOR_RS485::SENSOR_RS485(){
   relay_ON = new uint8_t[8]{0xFF, 0x05, 0x00, 0x00, 0xFF, 0x00, 0x99, 0xE4};
   relay_OFF = new uint8_t[8]{0xFF, 0x05, 0x00, 0x00, 0x00, 0x00, 0xD8, 0x14};
 
+  read_Voltage = new uint8_t[8]{0x07, 0x03, 0x00, 0x20, 0x00, 0x02, 0xC5, 0xA7};
+  read_Current = new uint8_t[8]{0x07, 0x03, 0x00, 0x00, 0x00, 0x02, 0xC4, 0x6D};
+
   data_air_HUMID_TEMP = new uint8_t[8]{0x14, 0x03, 0x01, 0xF4, 0x00, 0x02, 0x86, 0xC0};
   data_air_NOISE = new uint8_t[8]{0x14, 0x03, 0x01, 0xF6, 0x00, 0x01, 0x67, 0x01};
   data_air_PM25_PM10 = new uint8_t[8]{0x14, 0x03, 0x01, 0xF7, 0x00, 0x02, 0x76, 0xC0};
@@ -270,6 +287,9 @@ SENSOR_RS485::SENSOR_RS485(){
 SENSOR_RS485::~SENSOR_RS485() {
   delete[] relay_ON;
   delete[] relay_OFF;
+  
+  delete[] read_Voltage;
+  delete[] read_Current;
 
 
   delete[] data_air_HUMID_TEMP;
@@ -292,6 +312,13 @@ uint8_t* SENSOR_RS485::relay_turnOFF(){
   return relay_OFF;
 };
 
+uint8_t* SENSOR_RS485::read_Vol(){
+  return read_Voltage;
+};
+
+uint8_t* SENSOR_RS485::read_Cur(){
+  return read_Current;
+};
 
 uint8_t* SENSOR_RS485::getDataAIR_HUMID_TEMP(){
   return data_air_HUMID_TEMP;

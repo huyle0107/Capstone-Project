@@ -20,7 +20,6 @@ void setup() {
   M5.begin(true, false, true);
   delay(50);
   M5.dis.fillpix(0x00ff00);
-  pinMode(26, OUTPUT);
 
   SerialMon.begin(Monitor_baudrate, SERIAL_8N1, Monitor_RX, Monitor_TX);
   SerialNBIOT.begin(NBIOT_baudrate, SERIAL_8N1, NBIOT_RX,NBIOT_TX);
@@ -45,7 +44,7 @@ void setup() {
  }
 
 void loop(){
-  /SoilAirStateMachine();
+  SoilAirStateMachine();
 }
 // void loop() {
 //  

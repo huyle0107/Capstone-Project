@@ -9,7 +9,8 @@ String publishData;
 
 State state =  INIT;
 State pre_state = state;
-int count_fail = 0;
+
+float Voltage = 0, Voltage1 = 0, Current = 0, Power = 0;
 float air_TEMP = 0,air_HUMID = 0, air_NOISE = 0, air_PM25 = 0, air_PM10 = 0, air_ATMOSPHERE = 0, air_LUX = 0, air_CO = 0, air_CO2 = 0, air_SO2 = 0, air_NO2 = 0, air_O3 = 0;
 float soil_PH = 0, soil_TEMP = 0, soil_HUMID = 0, soil_N = 0, soil_P = 0, soil_K= 0, soil_EC = 0;
 
@@ -61,6 +62,48 @@ void SoilAirStateMachine(){
                   SerialMon.println();
                   state = WAIT_SEND;
                 }
+
+                //RS485 response read VOLTAGE
+                if(pre_state == READ_VOLTAGE){
+                  uint8_t receivedData[9];
+                  Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
+                  for (int i = 0; i < 9 ; i++) {
+                    SerialMon.print("0x");
+                    SerialMon.print(receivedData[i], HEX);
+                    SerialMon.print(", ");
+                  }
+                  SerialMon.println();
+                  SerialMon.print("VOLTAGE LOAD =");
+                  Voltage = int16_t((receivedData[3] << 8 | receivedData[4])) / 100.0;
+                  SerialMon.println(data.floatToString(Voltage));
+
+                  SerialMon.print("VOLTAGE BATTERY =");
+                  Voltage1 = int16_t((receivedData[5] << 8 | receivedData[6])) / 100.0;
+                  SerialMon.println(data.floatToString(Voltage1));
+                  state = READ_CURRENT;
+                }   
+
+                //RS485 response read VOLTAGE
+                if(pre_state == READ_CURRENT){
+                  uint8_t receivedData[9];
+                  Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
+                  for (int i = 0; i < 9 ; i++) {
+                    SerialMon.print("0x");
+                    SerialMon.print(receivedData[i], HEX);
+                    SerialMon.print(", ");
+                  }
+                  SerialMon.println();
+                  SerialMon.print("CURRENT =");
+                  float temp = int16_t((receivedData[3] << 8 | receivedData[4]));
+                  Current = (temp - 44 - temp / 10.0) / 1000.0;
+                  SerialMon.println(data.floatToString(Current));
+                  
+                  Power = Voltage * Current;
+                  SerialMon.print("POWER =");
+                  SerialMon.println(data.floatToString(Power));
+
+                  state = READ_AIR_TEMP_HUMID;
+                }               
                   
                 //RS485 response read AIR_TEMP_HUMID
                 if(pre_state == READ_AIR_TEMP_HUMID){
@@ -305,16 +348,33 @@ void SoilAirStateMachine(){
                   SerialMon.print("Soil_K =");
                   soil_K = int16_t((receivedData[7] << 8 | receivedData[8]));
                   SerialMon.println(data.floatToString(soil_K));
-                  state = RELAYOFF;
+                  //state = RELAYOFF;
+                  state = WAIT_SEND;
                 }              
               }
               break;
 
     case WAIT_RELAY:
               if(timer_flag == 1){
-                state = READ_AIR_TEMP_HUMID;
+                state = READ_VOLTAGE;
               }
               break;
+
+    case READ_VOLTAGE:
+              SerialMon.println("Writing to AirSoilStation - VOLTAGE with data...");
+              Serial485.write(data485.read_Vol(), 8);
+              pre_state = state;
+              state = WAIT_SENSOR;
+              setTimer(timeWaitSensor);        
+              break;   
+
+    case READ_CURRENT:
+              SerialMon.println("Writing to AirSoilStation - CURRENT with data...");
+              Serial485.write(data485.read_Cur(), 8);
+              pre_state = state;
+              state = WAIT_SENSOR;
+              setTimer(timeWaitSensor);        
+              break; 
 
     case READ_AIR_TEMP_HUMID:
               SerialMon.println("Writing to AirStation - TEMP and HUMID with data...");
@@ -443,11 +503,12 @@ void SoilAirStateMachine(){
               break;
 
     case NBIOT_SEND:
-              publishData = data.createAirSoilStationJSON(air_TEMP,air_HUMID,air_LUX,air_ATMOSPHERE,air_NOISE,air_PM10,air_PM25,air_CO,air_CO2,air_SO2,air_NO2,air_O3,soil_TEMP, soil_HUMID, soil_PH, soil_EC, soil_N, soil_P, soil_K);
+              publishData = data.createAirSoilStationJSON(Voltage, Voltage1, Power, air_TEMP,air_HUMID,air_LUX,air_ATMOSPHERE,air_NOISE,air_PM10,air_PM25,air_CO,air_CO2,air_SO2,air_NO2,air_O3,soil_TEMP, soil_HUMID, soil_PH, soil_EC, soil_N, soil_P, soil_K);
               SerialMon.println(publishData);
               NBIOT_publishData(AirStation,publishData);
               state = WAIT_RESPONSE;
               setTimer(timeWaitResponse);
+              setTimer1(timeExecuteResponse);
               // state = SYSTEMOFF;
               // setTimer(timeSleep);             
               break;
@@ -455,8 +516,7 @@ void SoilAirStateMachine(){
     case WAIT_RESPONSE:
               if(getResponse == true){
                 SerialMon.println("Receive callback");
-                state = SYSTEMOFF;
-                setTimer(timeSleep);
+                state = CLEAR_BUFFER;
               }
               NBIOT_ListenCallback();
               if(timer_flag){
@@ -464,11 +524,19 @@ void SoilAirStateMachine(){
               }
               break;
 
-    case SYSTEMOFF:
+    case  CLEAR_BUFFER:
               NBIOT_clearBuffer();
+              if(timer1_flag){
+                state = SYSTEMOFF;
+                setTimer(timeSleep);
+              }
+              break;
+
+    case SYSTEMOFF:
               if(timer_flag){
                 setTimer1(timeRead);
-                state = RELAYON;
+                state = READ_VOLTAGE;
+                //state = RELAYON;
               }
               break;
     default:

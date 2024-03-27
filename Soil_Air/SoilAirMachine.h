@@ -30,7 +30,11 @@ enum State {
     WAIT_SEND = 19,
     NBIOT_SEND = 20,
     WAIT_RESPONSE = 21,
-    SYSTEMOFF = 22
+    SYSTEMOFF = 22,
+    CLEAR_BUFFER = 23,
+
+    READ_VOLTAGE = 24,
+    READ_CURRENT = 25
 };
 
 
