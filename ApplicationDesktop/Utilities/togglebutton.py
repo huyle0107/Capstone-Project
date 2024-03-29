@@ -1,5 +1,6 @@
 from tkinter import *
 from PIL import Image, ImageTk
+import os
 
 class ToggleButton:
     is_on = False
@@ -21,8 +22,9 @@ class ToggleButton:
     def __init__(self, win):
         # self.on = ImageTk.PhotoImage(Image.open("E:/Documents/Capstone Project/Capstone-Project/Application Desktop/Images/on_button_m.png").resize((54, 32), Image.LANCZOS))
         # self.off = ImageTk.PhotoImage(Image.open("E:/Documents/Capstone Project/Capstone-Project/Application Desktop/Images/off_button_m.png").resize((54, 32), Image.LANCZOS))
-        self.on  = ImageTk.PhotoImage(Image.open("~/Desktop/MDT-128/Capstone-Project/ApplicationDesktop/Images/on_button_m.png").resize((54, 32), Image.LANCZOS))
-        self.off = ImageTk.PhotoImage(Image.open("~/Desktop/MDT-128/Capstone-Project/ApplicationDesktop/Images/off_button_m.png").resize((54, 32), Image.LANCZOS))
+        self.on  = ImageTk.PhotoImage(Image.open(os.path.expanduser("~/Desktop/MDT-128/Capstone-Project/ApplicationDesktop/Images/on_button_m.png")).resize((54, 32), Image.LANCZOS))
+        self.off = ImageTk.PhotoImage(Image.open(os.path.expanduser("~/Desktop/MDT-128/Capstone-Project/ApplicationDesktop/Images/off_button_m.png")).resize((54, 32), Image.LANCZOS))
+
 
         self.is_on = False
         self.on_button = Button(win, image=self.off, bd = 0, bg='white', command=self.toggle_button_click, justify=CENTER)
