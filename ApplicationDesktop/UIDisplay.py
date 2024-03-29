@@ -594,6 +594,24 @@ def mqtt_callback(msg):
     global counter_air_soil
     global counter_water
 
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3
+    global val_pump_1
+    global val_pump_2
+
+    global btn_valve_1 
+    global btn_valve_2 
+    global btn_valve_3 
+    global btn_pump_flow_1
+    global btn_pump_flow_2 
+    global btn_pump_flow_3
+    global btn_pump_1
+    global btn_pump_2
+
     global WaterLabelTempValue
     global WaterLabelSalValue
     global WaterLabelPHValue
@@ -1016,7 +1034,6 @@ except Exception as e:
     print(f"Can't connect to MQTT!!!! - {e}\n")
     
 tree.place(relx=0.51, rely=0.47, relwidth=0.47, relheight=0.51)
-
 
 #####################################################################################################################################################################
 ############################################################### CREATE RADIO BUTTONS FRAME 1 ########################################################################
