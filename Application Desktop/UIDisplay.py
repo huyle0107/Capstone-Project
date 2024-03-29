@@ -1,8 +1,10 @@
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 import tkinter as tk
 from tkinter import PhotoImage, ttk
 from MQTT import *
 import threading
+import json
+import requests
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -35,6 +37,13 @@ def show_frame_1(frame):
 def remove_border(event):
     # Remove focus from the Radiobutton to prevent border around the text
     event.widget.master.focus_set()
+    
+# Function to handle touch scroll event
+def handle_touch_scroll(event):
+    global last_y
+    delta = event.y - last_y
+    tree.yview_scroll(4 * int(delta / 120), "units")
+    last_y = event.y
 
 ####################################################################################################################################################################
 ########################################################## CREATE BUTTON FOR FUNCTION PUMP & MIXER #################################################################
@@ -42,74 +51,89 @@ def remove_border(event):
     
 try:
     ser = serial.Serial(port="/dev/ttyUSB0", baudrate=9600)
-    # ser = serial.Serial(port="COM7", baudrate=115200)
 except:
     print("Modbus485**","Failed to write data")
 
 m485 = Utilities.modbus485.Modbus485(ser)
 
 def btn_valve_1_onClick(state):
+    global mqttObject
     print("Button1 is click", state)
     if state:
         m485.modbus485_send(relay1_ON)
     else:
         m485.modbus485_send(relay1_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0001", state)
     pass
 
 def btn_valve_2_onClick(state):
+    global mqttObject
     print("Button2 is click", state)
     if state:
         m485.modbus485_send(relay2_ON)
     else:
         m485.modbus485_send(relay2_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0002", state)
     pass
 
 def btn_valve_3_onClick(state):
+    global mqttObject
     print("Button3 is click", state)
     if state:
         m485.modbus485_send(relay3_ON)
     else:
         m485.modbus485_send(relay3_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0003", state)
     pass
 
 def btn_pump_flow_1_onClick(state):
+    global mqttObject
     print("Flow 1 is click", state)
     if state:
         m485.modbus485_send(relay4_ON)
     else:
         m485.modbus485_send(relay4_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0001", state)
     pass
 
 def btn_pump_flow_2_onClick(state):
+    global mqttObject
     print("Flow 2 is click", state)
     if state:
         m485.modbus485_send(relay5_ON)
     else:
         m485.modbus485_send(relay5_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0002", state)
     pass
 
 def btn_pump_flow_3_onClick(state):
+    global mqttObject
     print("Flow 3 is click", state)
     if state:
         m485.modbus485_send(relay6_ON)
     else:
         m485.modbus485_send(relay6_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0003", state)
     pass
 
 def btn_pump_1_onClick(state):
+    global mqttObject
     print("Pump 1 is click", state)
     if state:
         m485.modbus485_send(relay7_ON)
     else:
         m485.modbus485_send(relay7_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0004", state)
     pass
 
 def btn_pump_2_onClick(state):
+    global mqttObject
     print("Pump 2 is click", state)
     if state:
         m485.modbus485_send(relay8_ON)
     else:
         m485.modbus485_send(relay8_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0005", state)
     pass
 
 ####################################################################################################################################################################
@@ -134,7 +158,7 @@ container = tk.Frame(root)
 container.pack(fill="both", expand=True)
 
 # Create multiple frames
-frame1 = tk.Frame(container, bg="red")
+frame1 = tk.Frame(container, bg="blue")
 frame2 = tk.Frame(container, bg="blue")
 ####################################################################################################################################################################
 ###################################################################### Declare variables ###########################################################################
@@ -195,6 +219,15 @@ btn_pump_flow_3 = ToggleButton(frame1)
 btn_pump_1 = ToggleButton(frame1)
 btn_pump_2 = ToggleButton(frame1)
 
+val_valve_1 = "0"
+val_valve_2 = "0"
+val_valve_3 = "0"
+val_pump_flow_1 = "0"
+val_pump_flow_2 = "0"
+val_pump_flow_3 = "0"
+val_pump_1 = "0"
+val_pump_2 = "0"
+
 WaterLabelTempValue = "24.8"
 WaterLabelSalValue = "468.7"
 WaterLabelPHValue = "6.2"
@@ -230,11 +263,10 @@ counter_air_soil = 0
 counter_water = 0
 counter = list()
 
+# Variables to track touch scroll movement
+last_y = 0
+
 thread = None
-try:
-    mqttObject = MQTTHelper()
-except Exception as e:
-    print(f"Can't get data from the MQTT!!!! - {e}\n")
 
 ####################################################################################################################################################################
 ######################################################################### SCREEN 1 #################################################################################
@@ -250,9 +282,9 @@ label_image_frame_1.place(relx=0, rely=0, relwidth=1, relheight=1)
 
 # Set title for frame 1
 string1Frame1 = tk.Label(frame1, text="STATION AVAILABLE", bg="white", anchor="w", font=("Inter", 15, "bold"))
-string1Frame1.place(relx=0.515, rely=0.04, relwidth=0.21, relheight=0.03)
+string1Frame1.place(relx=0.515, rely=0.04, relwidth=0.23, relheight=0.03)
 
-string2Frame1 = tk.Label(frame1, text="HISTORY\nCHART\nOF \n_________\nSTATION\nVALUES", bg="white", anchor="w", font=("Inter", 15, "bold"), justify="left")
+string2Frame1 = tk.Label(frame1, text="HISTORY\nCHART\nOF \n_________\nSTATION\nVALUES", bg="white", anchor="w", font=("Inter", 14, "bold"), justify="left")
 string2Frame1.place(relx=0.893, rely=0.035, relwidth=0.09, relheight=0.24)
 
 string3Frame1 = tk.Label(frame1, text="DIARY OF VALUES", bg="white", anchor="w", font=("Inter", 15, "bold"))
@@ -361,7 +393,7 @@ def create_button_frame_1():
         string2Frame1.config(text = "HISTORY\nCHART\nOF \nWATER \nSTATION\nVALUES")
 
         stringLabelWater = tk.Label(frame1, text="WATER STATION", bg="white", anchor="center", font=("Inter", 18, "bold"), fg="blue")
-        stringLabelWater.place(relx=0.155, rely=0.04, relwidth=0.2, relheight=0.03)
+        stringLabelWater.place(relx=0.145, rely=0.04, relwidth=0.25, relheight=0.03)
 
         WaterLabelORP = tk.Label(frame1, text=f"ORP (ppm)\n{WaterLabelORPValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="blue")
         WaterLabelORP.place(relx=0.0315, rely=0.1, relwidth=0.12, relheight=0.07)
@@ -370,7 +402,7 @@ def create_button_frame_1():
         WaterLabelSal.place(relx=0.398, rely=0.1, relwidth=0.09, relheight=0.07)
 
         WaterLabelTemp = tk.Label(frame1, text=f"Temperature(°C)\n{WaterLabelTempValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="blue")
-        WaterLabelTemp.place(relx=0.18, rely=0.15, relwidth=0.17, relheight=0.07)
+        WaterLabelTemp.place(relx=0.18, rely=0.15, relwidth=0.195, relheight=0.07)
         
         WaterLabelPH = tk.Label(frame1, text=f"PH\n{WaterLabelPHValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="blue")
         WaterLabelPH.place(relx=0.414, rely=0.2, relwidth=0.05, relheight=0.07)
@@ -380,80 +412,80 @@ def create_button_frame_1():
 
         # BUTTON PUMP & MIXER
         labelMixNutriFood = tk.Label(frame1, text="MIX NUTRITION", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        labelMixNutriFood.place(relx=0.05, rely=0.4, relwidth=0.2, relheight=0.03)
+        labelMixNutriFood.place(relx=0.0315, rely=0.4, relwidth=0.2, relheight=0.03)
 
         labelNutriFood1 = tk.Label(frame1, text="SOLUTION 1", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        labelNutriFood1.place(relx=0.34, rely=0.32, relwidth=0.12, relheight=0.03)
+        labelNutriFood1.place(relx=0.31, rely=0.32, relwidth=0.14, relheight=0.03)
 
         labelNutriFood2 = tk.Label(frame1, text="SOLUTION 2", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        labelNutriFood2.place(relx=0.34, rely=0.4, relwidth=0.12, relheight=0.03)
+        labelNutriFood2.place(relx=0.31, rely=0.4, relwidth=0.14, relheight=0.03)
 
         labelNutriFood3 = tk.Label(frame1, text="SOLUTION 3", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        labelNutriFood3.place(relx=0.34, rely=0.48, relwidth=0.12, relheight=0.03)
+        labelNutriFood3.place(relx=0.31, rely=0.48, relwidth=0.14, relheight=0.03)
 
         btn_valve_1 = ToggleButton(frame1)
         btn_valve_1.setClickEvent(btn_valve_1_onClick)
-        btn_valve_1.button_place(0.26, 0.305, 0.053, 0.054)
+        btn_valve_1.button_place(0.235, 0.305, 0.053, 0.054)
 
         btn_valve_2 = ToggleButton(frame1)
         btn_valve_2.setClickEvent(btn_valve_2_onClick)
-        btn_valve_2.button_place(0.26, 0.385, 0.053, 0.054)
+        btn_valve_2.button_place(0.235, 0.385, 0.053, 0.054)
 
         btn_valve_3 = ToggleButton(frame1)
         btn_valve_3.setClickEvent(btn_valve_3_onClick)
-        btn_valve_3.button_place(0.26, 0.465, 0.054, 0.054)
+        btn_valve_3.button_place(0.235, 0.465, 0.054, 0.054)
 
         ##### SECOND GROUP BUTTON
 
         labelRegion = tk.Label(frame1, text="IRRIGATION\nSUBDIVISION", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        labelRegion.place(relx=0.06, rely=0.64, relwidth=0.15, relheight=0.07)
+        labelRegion.place(relx=0.0415, rely=0.64, relwidth=0.15, relheight=0.07)
 
         labelRegion1 = tk.Label(frame1, text="SUBDIVISION 1", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        labelRegion1.place(relx=0.34, rely=0.58, relwidth=0.15, relheight=0.03)
+        labelRegion1.place(relx=0.31, rely=0.58, relwidth=0.17, relheight=0.03)
 
         labelRegion2 = tk.Label(frame1, text="SUBDIVISION 2", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        labelRegion2.place(relx=0.34, rely=0.66, relwidth=0.15, relheight=0.03)
+        labelRegion2.place(relx=0.31, rely=0.66, relwidth=0.17, relheight=0.03)
 
         labelRegion3 = tk.Label(frame1, text="SUBDIVISION 3", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        labelRegion3.place(relx=0.34, rely=0.74, relwidth=0.15, relheight=0.03)
+        labelRegion3.place(relx=0.31, rely=0.74, relwidth=0.17, relheight=0.03)
 
         btn_pump_flow_1 = ToggleButton(frame1)
         btn_pump_flow_1.setClickEvent(btn_pump_flow_1_onClick)
-        btn_pump_flow_1.button_place(0.26, 0.565, 0.053, 0.054)
+        btn_pump_flow_1.button_place(0.235, 0.565, 0.053, 0.054)
 
         btn_pump_flow_2 = ToggleButton(frame1)
         btn_pump_flow_2.setClickEvent(btn_pump_flow_2_onClick)
-        btn_pump_flow_2.button_place(0.26, 0.645, 0.053, 0.054)
+        btn_pump_flow_2.button_place(0.235, 0.645, 0.053, 0.054)
 
         btn_pump_flow_3 = ToggleButton(frame1)
         btn_pump_flow_3.setClickEvent(btn_pump_flow_3_onClick)
-        btn_pump_flow_3.button_place(0.26, 0.725, 0.053, 0.054)
+        btn_pump_flow_3.button_place(0.235, 0.725, 0.053, 0.054)
 
         ##### THIRD GROUP BUTTON
 
         labelPumps = tk.Label(frame1, text="MAIN PUMP", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="blue")
-        labelPumps.place(relx=0.067, rely=0.88, relwidth=0.15, relheight=0.03)
+        labelPumps.place(relx=0.0485, rely=0.88, relwidth=0.15, relheight=0.03)
 
         labelPump1 = tk.Label(frame1, text="PUMP IN", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="blue")
-        labelPump1.place(relx=0.34, rely=0.84, relwidth=0.12, relheight=0.03)
+        labelPump1.place(relx=0.31, rely=0.84, relwidth=0.14, relheight=0.03)
 
         labelPump2 = tk.Label(frame1, text="PUMP OUT", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="blue")
-        labelPump2.place(relx=0.34, rely=0.92, relwidth=0.12, relheight=0.03)
+        labelPump2.place(relx=0.31, rely=0.92, relwidth=0.14, relheight=0.03)
 
         btn_pump_1 = ToggleButton(frame1)
         btn_pump_1.setClickEvent(btn_pump_1_onClick)
-        btn_pump_1.button_place(0.26, 0.825, 0.053, 0.054)
+        btn_pump_1.button_place(0.235, 0.825, 0.053, 0.054)
 
         btn_pump_2 = ToggleButton(frame1)
         btn_pump_2.setClickEvent(btn_pump_2_onClick)
-        btn_pump_2.button_place(0.26, 0.905, 0.053, 0.054)
+        btn_pump_2.button_place(0.235, 0.905, 0.053, 0.054)
 
     ###################################################### AIR & SOIL STATION ########################################################################
 
     elif giatri == "Air & Soil Station":
 
-        child = ["Air Temperature", "Air Humidity", "Noise", "PM2.5", "PM10", "ATMOSPHERE", "Lux", "CO", "CO2", "SO2", "NO2", "O3",
-                  "Soil Temperature", "Soil Humidity", "PH", "EC", "Nitrogen", "Phosphorus", "Potassium"]
+        child = ["Air Temp", "Air Humidity", "Noise", "PM2.5", "PM10", "ATMOSPHERE", "Lux", "CO", "CO2", "SO2", "NO2", "O3",
+                  "Soil Temp", "Soil Humidity", "PH", "EC", "Nitrogen", "Phosphorus", "Potassium"]
         
         string2Frame1.config(text = "HISTORY\nCHART\nOF AIR\n& SOIL\nSTATION\nVALUES")
 
@@ -462,65 +494,65 @@ def create_button_frame_1():
         stringLabelSoil.place(relx=0.16, rely=0.64, relwidth=0.2, relheight=0.03)
 
         SoilLabelTemp = tk.Label(frame1, text=f"Temperature (°C)\n{SoilLabelTempValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        SoilLabelTemp.place(relx=0.0315, rely=0.7, relwidth=0.17, relheight=0.07)
+        SoilLabelTemp.place(relx=0.019, rely=0.7, relwidth=0.195, relheight=0.07)
 
         SoilLabelP = tk.Label(frame1, text=f"Phosphorus (ppm)\n{SoilLabelPValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        SoilLabelP.place(relx=0.295, rely=0.7, relwidth=0.18, relheight=0.07)
+        SoilLabelP.place(relx=0.2825, rely=0.7, relwidth=0.205, relheight=0.07)
 
         SoilLabelEC = tk.Label(frame1, text=f"EC (µS/cm)\n{SoilLabelECValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        SoilLabelEC.place(relx=0.06, rely=0.8, relwidth=0.12, relheight=0.07)
+        SoilLabelEC.place(relx=0.055, rely=0.8, relwidth=0.145, relheight=0.07)
 
         SoilLabelPH = tk.Label(frame1, text=f"PH\n{SoilLabelPHValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        SoilLabelPH.place(relx=0.23, rely=0.8, relwidth=0.1, relheight=0.07)
+        SoilLabelPH.place(relx=0.2175, rely=0.8, relwidth=0.125, relheight=0.07)
 
         SoilLabelN = tk.Label(frame1, text=f"Nitrogen (ppm)\n{SoilLabelNValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        SoilLabelN.place(relx=0.312, rely=0.8, relwidth=0.14, relheight=0.07)
+        SoilLabelN.place(relx=0.2995, rely=0.8, relwidth=0.165, relheight=0.07)
 
         SoilLabelHumid  = tk.Label(frame1, text=f"Humidity (%)\n{SoilLabelHumidValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        SoilLabelHumid .place(relx=0.053, rely=0.9, relwidth=0.12, relheight=0.07)
+        SoilLabelHumid .place(relx=0.043, rely=0.9, relwidth=0.145, relheight=0.07)
 
         SoilLabelK = tk.Label(frame1, text=f"Potassium (ppm)\n{SoilLabelKValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="red")
-        SoilLabelK.place(relx=0.303, rely=0.9, relwidth=0.16, relheight=0.07)
+        SoilLabelK.place(relx=0.2905, rely=0.9, relwidth=0.187, relheight=0.07)
 
         # AIR STATION
         stringLabelAir = tk.Label(frame1, text="AIR STATION", bg="white", anchor="center", font=("Inter", 18, "bold"), fg="green")
         stringLabelAir.place(relx=0.155, rely=0.04, relwidth=0.2, relheight=0.03)
 
         AirLabelPM2 = tk.Label(frame1, text=f"PM2.5 (ppm)\n{AirLabelPM2Value}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelPM2.place(relx=0.032, rely=0.1, relwidth=0.12, relheight=0.07)
+        AirLabelPM2.place(relx=0.02, rely=0.1, relwidth=0.145, relheight=0.07)
 
         AirLabelSO2 = tk.Label(frame1, text=f"SO2 (ppm)\n{AirLabelSO2Value}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelSO2.place(relx=0.366, rely=0.1, relwidth=0.12, relheight=0.07)
+        AirLabelSO2.place(relx=0.362, rely=0.1, relwidth=0.117, relheight=0.07)
 
         AirLabelTemp = tk.Label(frame1, text=f"Temperature (°C)\n{AirLabelTempValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelTemp.place(relx=0.174, rely=0.15, relwidth=0.17, relheight=0.07)
+        AirLabelTemp.place(relx=0.16, rely=0.15, relwidth=0.195, relheight=0.07)
 
         AirLabelPM10 = tk.Label(frame1, text=f"PM10 (ppm)\n{AirLabelPM10Value}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelPM10.place(relx=0.035, rely=0.2, relwidth=0.12, relheight=0.07)
+        AirLabelPM10.place(relx=0.024, rely=0.2, relwidth=0.145, relheight=0.07)
 
         AirLabelCO2 = tk.Label(frame1, text=f"CO2 (ppm)\n{AirLabelCO2Value}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelCO2.place(relx=0.365, rely=0.2, relwidth=0.12, relheight=0.07)
+        AirLabelCO2.place(relx=0.361, rely=0.2, relwidth=0.119, relheight=0.07)
 
         AirLabelHumid = tk.Label(frame1, text=f"Humidity (%)\n{AirLabelHumidValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelHumid.place(relx=0.0315, rely=0.3, relwidth=0.12, relheight=0.07)
+        AirLabelHumid.place(relx=0.019, rely=0.3, relwidth=0.145, relheight=0.07)
 
         AirLabelCO = tk.Label(frame1, text=f"CO (ppm)\n{AirLabelCOValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelCO.place(relx=0.21, rely=0.3, relwidth=0.1, relheight=0.07)
+        AirLabelCO.place(relx=0.206, rely=0.3, relwidth=0.107, relheight=0.07)
 
         AirLabelNoise = tk.Label(frame1, text=f"Noise (dB)\n{AirLabelNoiseValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelNoise.place(relx=0.367, rely=0.3, relwidth=0.12, relheight=0.07)
+        AirLabelNoise.place(relx=0.363, rely=0.3, relwidth=0.117, relheight=0.07)
 
         AirLabelLux = tk.Label(frame1, text=f"Luminous Intensity(Lux)\n{AirLabelLuxValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelLux.place(relx=0.048, rely=0.4, relwidth=0.27, relheight=0.07)
+        AirLabelLux.place(relx=0.045, rely=0.4, relwidth=0.295, relheight=0.07)
 
         AirLabelO3 = tk.Label(frame1, text=f"O3 (ppm)\n{AirLabelO3Value}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelO3.place(relx=0.373, rely=0.4, relwidth=0.1, relheight=0.07)
+        AirLabelO3.place(relx=0.369, rely=0.4, relwidth=0.107, relheight=0.07)
 
         AirLabelPressure = tk.Label(frame1, text=f"Atmospheric Pressure (Kpa)\n{AirLabelPressureValue}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelPressure.place(relx=0.0315, rely=0.5, relwidth=0.27, relheight=0.07)
+        AirLabelPressure.place(relx=0.021, rely=0.5, relwidth=0.312, relheight=0.07)
 
         AirLabelNO2 = tk.Label(frame1, text=f"NO2 (ppm)\n{AirLabelNO2Value}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
-        AirLabelNO2.place(relx=0.366, rely=0.5, relwidth=0.12, relheight=0.07)
+        AirLabelNO2.place(relx=0.362, rely=0.5, relwidth=0.1191, relheight=0.07)
 
 ####################################################################################################################################################################
 ################################################################## CREATE A TREEVIEW WIDGET ########################################################################
@@ -546,8 +578,13 @@ tree.heading("#0", text="", anchor=tk.W)
 tree.heading("Name", text="Time", anchor="center")
 tree.heading("Age", text="Station/Sensors", anchor="center")
 tree.heading("cot3", text="Values", anchor="center")
-tree.tag_configure('bg', background='#4A6984')
-tree.tag_configure('fg', foreground="white")
+tree.tag_configure('fg', foreground='#4A6984')
+tree.tag_configure('bg', background="white")
+
+# Bind touch events to the treeview widget
+tree.bind("<ButtonPress-1>", lambda event: setattr(event, 'y', event.y_root))
+tree.bind("<B1-Motion>", handle_touch_scroll)
+tree.bind("<ButtonRelease-1>", lambda event: setattr(event, 'y', 0))
 
 ####################################################################################################################################################################
 ####################################################################### UPDATE DATA ################################################################################
@@ -904,6 +941,65 @@ def mqtt_callback(msg):
             AirLabelO3.config(text = f"O3 (ppm)\n{AirLabelO3Value}")
             AirLabelPressure.config(text = f"Atmospheric Pressure (Kpa)\n{AirLabelPressureValue}")
 
+        ########################################################## PUMP CONTROLLER #######################################################################
+        if (payload['station_id'] == "pump_station_0001"):
+            for i in range(len(payload['sensors'])):
+                print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+                
+                # PUMP 1
+                if (payload['sensors'][i]['id'] == "pump_0001"):
+                    if (val_pump_flow_1 != payload['sensors'][i]['value']):
+                        val_pump_flow_1 = payload['sensors'][i]['value']
+                        btn_pump_flow_1.toggle_button_click()
+
+                # PUMP 2
+                if (payload['sensors'][i]['id'] == "pump_0002"):
+                    if (val_pump_flow_2 != payload['sensors'][i]['value']):
+                        val_pump_flow_2 = payload['sensors'][i]['value']
+                        btn_pump_flow_2.toggle_button_click()
+
+                # PUMP 3    
+                if (payload['sensors'][i]['id']== "pump_0003"):
+                    if (val_pump_flow_3 != payload['sensors'][i]['value']):
+                        val_pump_flow_3 = payload['sensors'][i]['value']
+                        btn_pump_flow_3.toggle_button_click()
+
+                # PUMP 4   
+                if (payload['sensors'][i]['id']== "pump_0004"):
+                    if (val_pump_1 != payload['sensors'][i]['value']):
+                        val_pump_1 = payload['sensors'][i]['value']
+                        btn_pump_1.toggle_button_click()
+
+                # PUMP 5    
+                if (payload['sensors'][i]['id'] == "pump_0005"):
+                    if (val_pump_2 != payload['sensors'][i]['value']):
+                        val_pump_2 = payload['sensors'][i]['value']
+                        btn_pump_2.toggle_button_click()
+        
+        ######################################################### VALVE CONTROLLER #######################################################################
+        if (payload['station_id'] == "valve_station_0001"):
+            for i in range(len(payload['sensors'])):
+                print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+                
+                # VALVE 1
+                if (payload['sensors'][i]['id'] == "valve_0001"):
+                    if (val_valve_1 != payload['sensors'][i]['value']):
+                        val_valve_1 = payload['sensors'][i]['value']
+                        btn_valve_1.toggle_button_click()
+
+                # VALVE 2
+                if (payload['sensors'][i]['id'] == "valve_0002"):
+                    if (val_valve_2 != payload['sensors'][i]['value']):
+                        val_valve_2 = payload['sensors'][i]['value']
+                        btn_valve_2.toggle_button_click()
+
+                # VALVE 3    
+                if (payload['sensors'][i]['id']== "valve_0003"):
+                    if (val_valve_3 != payload['sensors'][i]['value']):
+                        val_valve_3 = payload['sensors'][i]['value']
+                        btn_valve_3.toggle_button_click()
+        
+        
         ################################################ CHECK FOR CLEAR UNAVAILABLE STATION ############################################################
         
         if (counter_water == 3) or (counter_air_soil == 3):
@@ -918,6 +1014,7 @@ def mqtt_callback(msg):
         print(f"Can't get data from the MQTT!!!! - {e}\n")
 
 try:
+    mqttObject = MQTTHelper()
     threading.Thread(target=mqttObject.setRecvCallBack(mqtt_callback)).start()
 except Exception as e:
     print(f"Can't connect to MQTT!!!! - {e}\n")

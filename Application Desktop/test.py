@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import PhotoImage, ttk
 from MQTT import *
 import threading
+import json
+import requests
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -23,6 +25,10 @@ def toggle_fullscreen(event = None):
         root.geometry(f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0")
     else:
         root.geometry("1024x600")  
+
+# Function to handle touch events
+def handle_touch(event):
+    print("Touch detected at ({}, {})".format(event.x, event.y))
 
 def show_frame_2(frame):
     frame.tkraise()
@@ -49,67 +55,83 @@ except:
 m485 = Utilities.modbus485.Modbus485(ser)
 
 def btn_valve_1_onClick(state):
+    global mqttObject
     print("Button1 is click", state)
-    if state:
-        m485.modbus485_send(relay1_ON)
-    else:
-        m485.modbus485_send(relay1_OFF)
+    # if state:
+    #     m485.modbus485_send(relay1_ON)
+    # else:
+    #     m485.modbus485_send(relay1_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0001", state)
     pass
 
 def btn_valve_2_onClick(state):
+    global mqttObject
     print("Button2 is click", state)
-    if state:
-        m485.modbus485_send(relay2_ON)
-    else:
-        m485.modbus485_send(relay2_OFF)
+    # if state:
+    #     m485.modbus485_send(relay2_ON)
+    # else:
+    #     m485.modbus485_send(relay2_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0002", state)
     pass
 
 def btn_valve_3_onClick(state):
+    global mqttObject
     print("Button3 is click", state)
-    if state:
-        m485.modbus485_send(relay3_ON)
-    else:
-        m485.modbus485_send(relay3_OFF)
+    # if state:
+    #     m485.modbus485_send(relay3_ON)
+    # else:
+    #     m485.modbus485_send(relay3_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0003", state)
     pass
 
 def btn_pump_flow_1_onClick(state):
+    global mqttObject
     print("Flow 1 is click", state)
-    if state:
-        m485.modbus485_send(relay4_ON)
-    else:
-        m485.modbus485_send(relay4_OFF)
+    # if state:
+    #     m485.modbus485_send(relay4_ON)
+    # else:
+    #     m485.modbus485_send(relay4_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0001", state)
     pass
 
 def btn_pump_flow_2_onClick(state):
+    global mqttObject
     print("Flow 2 is click", state)
-    if state:
-        m485.modbus485_send(relay5_ON)
-    else:
-        m485.modbus485_send(relay5_OFF)
+    # if state:
+    #     m485.modbus485_send(relay5_ON)
+    # else:
+    #     m485.modbus485_send(relay5_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0002", state)
     pass
 
 def btn_pump_flow_3_onClick(state):
+    global mqttObject
     print("Flow 3 is click", state)
-    if state:
-        m485.modbus485_send(relay6_ON)
-    else:
-        m485.modbus485_send(relay6_OFF)
+    # if state:
+    #     m485.modbus485_send(relay6_ON)
+    # else:
+    #     m485.modbus485_send(relay6_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0003", state)
     pass
 
 def btn_pump_1_onClick(state):
+    global mqttObject
     print("Pump 1 is click", state)
-    if state:
-        m485.modbus485_send(relay7_ON)
-    else:
-        m485.modbus485_send(relay7_OFF)
+    # if state:
+    #     m485.modbus485_send(relay7_ON)
+    # else:
+    #     m485.modbus485_send(relay7_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0004", state)
     pass
 
 def btn_pump_2_onClick(state):
+    global mqttObject
     print("Pump 2 is click", state)
-    if state:
-        m485.modbus485_send(relay8_ON)
-    else:
-        m485.modbus485_send(relay8_OFF)
+    # if state:
+    #     m485.modbus485_send(relay8_ON)
+    # else:
+    #     m485.modbus485_send(relay8_OFF)
+    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0005", state)
     pass
 
 ####################################################################################################################################################################
@@ -194,6 +216,15 @@ btn_pump_flow_2 = ToggleButton(frame1)
 btn_pump_flow_3 = ToggleButton(frame1)
 btn_pump_1 = ToggleButton(frame1)
 btn_pump_2 = ToggleButton(frame1)
+
+val_valve_1 = "0"
+val_valve_2 = "0"
+val_valve_3 = "0"
+val_pump_flow_1 = "0"
+val_pump_flow_2 = "0"
+val_pump_flow_3 = "0"
+val_pump_1 = "0"
+val_pump_2 = "0"
 
 WaterLabelTempValue = "24.8"
 WaterLabelSalValue = "468.7"
@@ -547,6 +578,8 @@ tree.heading("cot3", text="Values", anchor="center")
 tree.tag_configure('bg', background='#4A6984')
 tree.tag_configure('fg', foreground="white")
 
+tree.bind("<Button-1>", handle_touch) 
+
 ####################################################################################################################################################################
 ####################################################################### UPDATE DATA ################################################################################
 ####################################################################################################################################################################
@@ -557,6 +590,24 @@ def mqtt_callback(msg):
     global dataset
     global counter_air_soil
     global counter_water
+
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3
+    global val_pump_1
+    global val_pump_2
+
+    global btn_valve_1 
+    global btn_valve_2 
+    global btn_valve_3 
+    global btn_pump_flow_1
+    global btn_pump_flow_2 
+    global btn_pump_flow_3
+    global btn_pump_1
+    global btn_pump_2
 
     global WaterLabelTempValue
     global WaterLabelSalValue
@@ -870,6 +921,64 @@ def mqtt_callback(msg):
                                 tags=('fg', 'bg'))
                     AirLabelO3Value = round(float(payload['sensors'][i]['value']), 2)
 
+        ########################################################## PUMP CONTROLLER #######################################################################
+        if (payload['station_id'] == "pump_station_0001"):
+            for i in range(len(payload['sensors'])):
+                print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+                
+                # PUMP 1
+                if (payload['sensors'][i]['id'] == "pump_0001"):
+                    if (val_pump_flow_1 != payload['sensors'][i]['value']):
+                        val_pump_flow_1 = payload['sensors'][i]['value']
+                        btn_pump_flow_1.toggle_button_click()
+
+                # PUMP 2
+                if (payload['sensors'][i]['id'] == "pump_0002"):
+                    if (val_pump_flow_2 != payload['sensors'][i]['value']):
+                        val_pump_flow_2 = payload['sensors'][i]['value']
+                        btn_pump_flow_2.toggle_button_click()
+
+                # PUMP 3    
+                if (payload['sensors'][i]['id']== "pump_0003"):
+                    if (val_pump_flow_3 != payload['sensors'][i]['value']):
+                        val_pump_flow_3 = payload['sensors'][i]['value']
+                        btn_pump_flow_3.toggle_button_click()
+
+                # PUMP 4   
+                if (payload['sensors'][i]['id']== "pump_0004"):
+                    if (val_pump_1 != payload['sensors'][i]['value']):
+                        val_pump_1 = payload['sensors'][i]['value']
+                        btn_pump_1.toggle_button_click()
+
+                # PUMP 5    
+                if (payload['sensors'][i]['id'] == "pump_0005"):
+                    if (val_pump_2 != payload['sensors'][i]['value']):
+                        val_pump_2 = payload['sensors'][i]['value']
+                        btn_pump_2.toggle_button_click()
+        
+        ######################################################### VALVE CONTROLLER #######################################################################
+        if (payload['station_id'] == "valve_station_0001"):
+            for i in range(len(payload['sensors'])):
+                print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+                
+                # VALVE 1
+                if (payload['sensors'][i]['id'] == "valve_0001"):
+                    if (val_valve_1 != payload['sensors'][i]['value']):
+                        val_valve_1 = payload['sensors'][i]['value']
+                        btn_valve_1.toggle_button_click()
+
+                # VALVE 2
+                if (payload['sensors'][i]['id'] == "valve_0002"):
+                    if (val_valve_2 != payload['sensors'][i]['value']):
+                        val_valve_2 = payload['sensors'][i]['value']
+                        btn_valve_2.toggle_button_click()
+
+                # VALVE 3    
+                if (payload['sensors'][i]['id']== "valve_0003"):
+                    if (val_valve_3 != payload['sensors'][i]['value']):
+                        val_valve_3 = payload['sensors'][i]['value']
+                        btn_valve_3.toggle_button_click()
+        
         ########################################################### STORE VALUE #########################################################################        
     
         if datachange['station_id'] == "water_0001":

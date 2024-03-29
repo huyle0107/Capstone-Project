@@ -1,0 +1,49 @@
+[
+  {
+    "cycle": 5,
+    "flow1": 20,
+    "flow2": 10,
+    "flow3": 20,
+    "isActive": true,
+    "schedulerName": "LỊCH TƯỚI 1",
+    "startTime": "18:30",
+    "stopTime": "18:40"
+  },
+  {
+    "cycle": 120,
+    "flow1": 50,
+    "flow2": 20,
+    "flow3": 20,
+    "isActive": false,
+    "schedulerName": "LỊCH TƯỚI 2",
+    "startTime": "8:15",
+    "stopTime": "8:45"
+  },
+  {
+    "cycle": 15,
+    "flow1": 20,
+    "flow2": 20,
+    "flow3": 20,
+    "isActive": false,
+    "schedulerName": "LỊCH TƯỚI 3",
+    "startTime": "7:15",
+    "stopTime": "7:45"
+  }
+]
+
+Nguyên lý của mỗi lịch tưới:
+
+Tới giờ Starttime, quy trình bên dưới sẽ được kích hoạt.
+
+Máy châm phân 1 hoạt động, cảm biến đo lưu lượng sẽ feedback về lưu lượng, cho đến khi đạt được thông số lưu trong flow1 thì dừng, hoặc quá thời gian cho phép (timer = flow/2) thì dừng. Cảm biến đo lưu lượng sẽ được gửi về nhờ 1 mạch cảm biến gắn trên máy châm phân, giao tiếp theo tiêu chuẩn ESP32Now.
+
+Máy châm phân 2 hoạt động, với nguyên lý như máy châm phân 1
+Máy châm phân 3 hoạt động, với cùng nguyên lý như trên
+
+Máy bơm nước vào hoạt động, dừng khi cảm biến sonar báo đầy bình (hoặc dựa vào thời gian timeout)
+Máy bơm tưới hoạt động, với tủ châm phân ở CS1, thì có thể lựa chọn khu vực tưới (tối đa 3 khu vực)
+
+Máy bơm tưới sẽ dừng, khi nước trong bình chính gần cạn (dựa vào cảm biến sonar)
+Quy trình trên sẽ được lặp lại, sau 1 chu kì lưu trong thông tin Cycle (đơn vị minute)
+
+Việc lặp lại sẽ dừng khi hết thời gian của việc tưới tiêu (EndTime)

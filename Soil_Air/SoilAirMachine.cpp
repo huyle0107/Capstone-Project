@@ -535,8 +535,8 @@ void SoilAirStateMachine(){
     case SYSTEMOFF:
               if(timer_flag){
                 setTimer1(timeRead);
-                state = READ_VOLTAGE;
-                //state = RELAYON;
+                // state = READ_VOLTAGE;
+                state = RELAYON;
               }
               break;
     default:
