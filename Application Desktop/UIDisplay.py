@@ -999,7 +999,6 @@ def mqtt_callback(msg):
                         val_valve_3 = payload['sensors'][i]['value']
                         btn_valve_3.toggle_button_click()
         
-        
         ################################################ CHECK FOR CLEAR UNAVAILABLE STATION ############################################################
         
         if (counter_water == 3) or (counter_air_soil == 3):
