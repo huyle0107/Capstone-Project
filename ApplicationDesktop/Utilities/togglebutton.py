@@ -20,8 +20,8 @@ class ToggleButton:
         self.on_click_event(self.is_on)
 
     def __init__(self, win):
-        # self.on = ImageTk.PhotoImage(Image.open("E:/Documents/Capstone Project/Capstone-Project/Application Desktop/Images/on_button_m.png").resize((54, 32), Image.LANCZOS))
-        # self.off = ImageTk.PhotoImage(Image.open("E:/Documents/Capstone Project/Capstone-Project/Application Desktop/Images/off_button_m.png").resize((54, 32), Image.LANCZOS))
+        # self.on = ImageTk.PhotoImage(Image.open("E:/Documents/Capstone Project/Capstone-Project/ApplicationDesktop/Images/on_button_m.png").resize((54, 32), Image.LANCZOS))
+        # self.off = ImageTk.PhotoImage(Image.open("E:/Documents/Capstone Project/Capstone-Project/ApplicationDesktop/Images/off_button_m.png").resize((54, 32), Image.LANCZOS))
         self.on  = ImageTk.PhotoImage(Image.open(os.path.expanduser("~/Desktop/MDT-128/Capstone-Project/ApplicationDesktop/Images/on_button_m.png")).resize((54, 32), Image.LANCZOS))
         self.off = ImageTk.PhotoImage(Image.open(os.path.expanduser("~/Desktop/MDT-128/Capstone-Project/ApplicationDesktop/Images/off_button_m.png")).resize((54, 32), Image.LANCZOS))
 

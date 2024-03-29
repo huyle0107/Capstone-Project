@@ -47,7 +47,6 @@ def remove_border(event):
 ####################################################################################################################################################################
     
 try:
-    # ser = serial.Serial(port="/dev/ttyUSB0", baudrate=9600)
     ser = serial.Serial(port="COM7", baudrate=115200)
 except:
     print("Modbus485**","Failed to write data")
@@ -137,8 +136,9 @@ def btn_pump_2_onClick(state):
 ####################################################################################################################################################################
 ################################################################## CREATE THE MAIN WINDOW ##########################################################################
 ####################################################################################################################################################################
+
 root = tk.Tk()
-icon = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\Application Desktop\icon_app.png")
+icon = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\ApplicationDesktop\icon_app.png")
 # icon = PhotoImage(file="~/Desktop/MDT-128/Computer-Engineering-Project/icon_app.png")
 root.tk.call('wm', 'iconphoto', root._w, icon)
 
@@ -161,6 +161,7 @@ frame2 = tk.Frame(container, bg="blue")
 ####################################################################################################################################################################
 ###################################################################### Declare variables ###########################################################################
 ####################################################################################################################################################################
+
 global thread
 
 labelCaution = tk.Label(frame1, text="", bg="white", anchor="w", font=("Inter", 20))
@@ -274,7 +275,7 @@ except Exception as e:
 frame1.place(relx=0, rely=0, relwidth=1, relheight=1)
 
 # Load and display an image for Frame 1
-photo_frame_1 = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\Application Desktop\FRAME_FRIST.png")
+photo_frame_1 = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\ApplicationDesktop\FRAME_FRIST.png")
 label_image_frame_1 = tk.Label(frame1, image=photo_frame_1)
 label_image_frame_1.place(relx=0, rely=0, relwidth=1, relheight=1)
 
@@ -289,7 +290,7 @@ string3Frame1 = tk.Label(frame1, text="DIARY OF VALUES", bg="white", anchor="w",
 string3Frame1.place(relx=0.515, rely=0.434, relwidth=0.21, relheight=0.03)
 
 # Button transfer frame 2
-button_arrow_photo = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\Application Desktop\Button_frame_1.png")
+button_arrow_photo = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\ApplicationDesktop\Button_frame_1.png")
 button_frame_1 = tk.Label(frame1, image=button_arrow_photo, bg='blue')
 button_frame_1.place(relx=0.8855, rely=0.304)
 button_frame_1.bind("<Button-1>", lambda event: show_frame_2(frame2))
@@ -646,7 +647,7 @@ def mqtt_callback(msg):
     except Exception as e:
         print(f"\nError JSON FORMAT\n")
 
-    print(dataset)
+    # print(dataset)
 
     try:
         datachange['station_id'] = payload['station_id']
@@ -1080,7 +1081,7 @@ def create_radio_button_frame1():
 frame2.place(relx=0, rely=0, relwidth=1, relheight=1)
 
 # Load and display an image for Frame 2
-photo_frame_2 = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\Application Desktop\FRAME_SECOND.png")
+photo_frame_2 = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\ApplicationDesktop\FRAME_SECOND.png")
 label_image_frame_2 = tk.Label(frame2, image=photo_frame_2)
 label_image_frame_2.place(relx=0, rely=0, relwidth=1, relheight=1)
 
@@ -1089,7 +1090,7 @@ string1Frame2 = tk.Label(frame2, text="HISTORY", bg="white", anchor="w", font=("
 string1Frame2.place(relx=0.023, rely=0.04, relwidth=0.1, relheight=0.03)
 
 # Button transfer frame 2
-button_return_photo = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\Application Desktop\Button_frame_2.png")
+button_return_photo = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\ApplicationDesktop\Button_frame_2.png")
 button_frame_2 = tk.Label(frame2, image=button_return_photo, bg='blue')
 button_frame_2.place(relx=0.008, rely=0.875)
 button_frame_2.bind("<Button-1>", lambda event: show_frame_1(frame1))

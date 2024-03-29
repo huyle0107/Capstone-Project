@@ -159,9 +159,11 @@ container.pack(fill="both", expand=True)
 # Create multiple frames
 frame1 = tk.Frame(container, bg="blue")
 frame2 = tk.Frame(container, bg="blue")
+
 ####################################################################################################################################################################
 ###################################################################### Declare variables ###########################################################################
 ####################################################################################################################################################################
+
 global thread
 
 labelCaution = tk.Label(frame1, text="", bg="white", anchor="w", font=("Inter", 20))
@@ -266,6 +268,10 @@ counter = list()
 last_y = 0
 
 thread = None
+try:
+    mqttObject = MQTTHelper()
+except Exception as e:
+    print(f"Can't get data from the MQTT!!!! - {e}\n")
 
 ####################################################################################################################################################################
 ######################################################################### SCREEN 1 #################################################################################
@@ -649,7 +655,7 @@ def mqtt_callback(msg):
     except Exception as e:
         print(f"\nError JSON FORMAT\n")
 
-    print(dataset)
+    # print(dataset)
 
     try:
         datachange['station_id'] = payload['station_id']
@@ -924,39 +930,8 @@ def mqtt_callback(msg):
                                 tags=('fg', 'bg'))
                     AirLabelO3Value = round(float(payload['sensors'][i]['value']), 2)
 
-        ########################################################### STORE VALUE #########################################################################        
-    
-        if datachange['station_id'] == "water_0001":
-            WaterLabelEC.config(text = f"EC(ppm)\n{WaterLabelECValue}")
-            WaterLabelSal.config(text = f"Salinity\n{WaterLabelSalValue}")
-            WaterLabelPH.config(text = f"PH\n{WaterLabelPHValue}")
-            WaterLabelORP.config(text = f"ORP(ppm)\n{WaterLabelORPValue}")
-            WaterLabelTemp.config(text = f"Temperature(℃)\n{WaterLabelTempValue}")
-
-        elif datachange['station_id'] == "air_0001":
-            # SOIL STATION
-            SoilLabelTemp.config(text = f"Temperature (°C)\n{SoilLabelTempValue}")
-            SoilLabelHumid.config(text = f"Humidity (%)\n{SoilLabelHumidValue}")
-            SoilLabelEC.config(text = f"EC (µS/cm)\n{SoilLabelECValue}")
-            SoilLabelPH.config(text = f"PH\n{SoilLabelPHValue}")
-            SoilLabelN.config(text = f"Nitrogen (ppm)\n{SoilLabelNValue}")
-            SoilLabelP.config(text = f"Phosphorus (ppm)\n{SoilLabelPValue}")
-            SoilLabelK.config(text = f"Potassium (ppm)\n{SoilLabelKValue}")
-            # AIR STATION
-            AirLabelTemp.config(text = f"Temperature (°C)\n{AirLabelTempValue}")
-            AirLabelHumid.config(text = f"Humidity (%)\n{AirLabelHumidValue}")
-            AirLabelLux.config(text = f"Luminous Intensity(Lux)\n{AirLabelLuxValue}")
-            AirLabelNoise.config(text = f"Noise (dB)\n{AirLabelNoiseValue}")
-            AirLabelPM2.config(text = f"PM2.5 (ppm)\n{AirLabelPM2Value}")
-            AirLabelPM10.config(text = f"PM10 (ppm)\n{AirLabelPM10Value}")
-            AirLabelCO.config(text = f"CO (ppm)\n{AirLabelCOValue}")
-            AirLabelCO2.config(text = f"CO2 (ppm)\n{AirLabelCO2Value}")
-            AirLabelSO2.config(text = f"SO2 (ppm)\n{AirLabelSO2Value}") 
-            AirLabelNO2.config(text = f"NO2 (ppm)\n{AirLabelNO2Value}")
-            AirLabelO3.config(text = f"O3 (ppm)\n{AirLabelO3Value}")
-            AirLabelPressure.config(text = f"Atmospheric Pressure (Kpa)\n{AirLabelPressureValue}")
-
         ########################################################## PUMP CONTROLLER #######################################################################
+        
         if (payload['station_id'] == "pump_station_0001"):
             for i in range(len(payload['sensors'])):
                 print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
@@ -992,6 +967,7 @@ def mqtt_callback(msg):
                         btn_pump_2.toggle_button_click()
         
         ######################################################### VALVE CONTROLLER #######################################################################
+        
         if (payload['station_id'] == "valve_station_0001"):
             for i in range(len(payload['sensors'])):
                 print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
@@ -1014,6 +990,38 @@ def mqtt_callback(msg):
                         val_valve_3 = payload['sensors'][i]['value']
                         btn_valve_3.toggle_button_click()
         
+        ########################################################### STORE VALUE #########################################################################        
+    
+        if datachange['station_id'] == "water_0001":
+            WaterLabelEC.config(text = f"EC(ppm)\n{WaterLabelECValue}")
+            WaterLabelSal.config(text = f"Salinity\n{WaterLabelSalValue}")
+            WaterLabelPH.config(text = f"PH\n{WaterLabelPHValue}")
+            WaterLabelORP.config(text = f"ORP(ppm)\n{WaterLabelORPValue}")
+            WaterLabelTemp.config(text = f"Temperature(℃)\n{WaterLabelTempValue}")
+
+        elif datachange['station_id'] == "air_0001":
+            # SOIL STATION
+            SoilLabelTemp.config(text = f"Temperature (°C)\n{SoilLabelTempValue}")
+            SoilLabelHumid.config(text = f"Humidity (%)\n{SoilLabelHumidValue}")
+            SoilLabelEC.config(text = f"EC (µS/cm)\n{SoilLabelECValue}")
+            SoilLabelPH.config(text = f"PH\n{SoilLabelPHValue}")
+            SoilLabelN.config(text = f"Nitrogen (ppm)\n{SoilLabelNValue}")
+            SoilLabelP.config(text = f"Phosphorus (ppm)\n{SoilLabelPValue}")
+            SoilLabelK.config(text = f"Potassium (ppm)\n{SoilLabelKValue}")
+            # AIR STATION
+            AirLabelTemp.config(text = f"Temperature (°C)\n{AirLabelTempValue}")
+            AirLabelHumid.config(text = f"Humidity (%)\n{AirLabelHumidValue}")
+            AirLabelLux.config(text = f"Luminous Intensity(Lux)\n{AirLabelLuxValue}")
+            AirLabelNoise.config(text = f"Noise (dB)\n{AirLabelNoiseValue}")
+            AirLabelPM2.config(text = f"PM2.5 (ppm)\n{AirLabelPM2Value}")
+            AirLabelPM10.config(text = f"PM10 (ppm)\n{AirLabelPM10Value}")
+            AirLabelCO.config(text = f"CO (ppm)\n{AirLabelCOValue}")
+            AirLabelCO2.config(text = f"CO2 (ppm)\n{AirLabelCO2Value}")
+            AirLabelSO2.config(text = f"SO2 (ppm)\n{AirLabelSO2Value}") 
+            AirLabelNO2.config(text = f"NO2 (ppm)\n{AirLabelNO2Value}")
+            AirLabelO3.config(text = f"O3 (ppm)\n{AirLabelO3Value}")
+            AirLabelPressure.config(text = f"Atmospheric Pressure (Kpa)\n{AirLabelPressureValue}")
+        
         ################################################ CHECK FOR CLEAR UNAVAILABLE STATION ############################################################
         
         if (counter_water == 3) or (counter_air_soil == 3):
@@ -1028,7 +1036,7 @@ def mqtt_callback(msg):
         print(f"Can't get data from the MQTT!!!! - {e}\n")
 
 try:
-    mqttObject = MQTTHelper()
+    # mqttObject = MQTTHelper()
     threading.Thread(target=mqttObject.setRecvCallBack(mqtt_callback)).start()
 except Exception as e:
     print(f"Can't connect to MQTT!!!! - {e}\n")
