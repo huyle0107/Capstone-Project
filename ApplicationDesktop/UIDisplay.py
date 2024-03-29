@@ -938,30 +938,35 @@ def mqtt_callback(msg):
                 
                 # PUMP 1
                 if (payload['sensors'][i]['id'] == "pump_0001"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_flow_1)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_pump_flow_1 != payload['sensors'][i]['value']):
                         val_pump_flow_1 = payload['sensors'][i]['value']
                         btn_pump_flow_1.toggle_button_click()
 
                 # PUMP 2
                 if (payload['sensors'][i]['id'] == "pump_0002"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_flow_2)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_pump_flow_2 != payload['sensors'][i]['value']):
                         val_pump_flow_2 = payload['sensors'][i]['value']
                         btn_pump_flow_2.toggle_button_click()
 
                 # PUMP 3    
                 if (payload['sensors'][i]['id']== "pump_0003"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_flow_3)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_pump_flow_3 != payload['sensors'][i]['value']):
                         val_pump_flow_3 = payload['sensors'][i]['value']
                         btn_pump_flow_3.toggle_button_click()
 
                 # PUMP 4   
                 if (payload['sensors'][i]['id']== "pump_0004"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_1)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_pump_1 != payload['sensors'][i]['value']):
                         val_pump_1 = payload['sensors'][i]['value']
                         btn_pump_1.toggle_button_click()
 
                 # PUMP 5    
                 if (payload['sensors'][i]['id'] == "pump_0005"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_2)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_pump_2 != payload['sensors'][i]['value']):
                         val_pump_2 = payload['sensors'][i]['value']
                         btn_pump_2.toggle_button_click()
@@ -974,18 +979,21 @@ def mqtt_callback(msg):
                 
                 # VALVE 1
                 if (payload['sensors'][i]['id'] == "valve_0001"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_valve_1)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_valve_1 != payload['sensors'][i]['value']):
                         val_valve_1 = payload['sensors'][i]['value']
                         btn_valve_1.toggle_button_click()
 
                 # VALVE 2
                 if (payload['sensors'][i]['id'] == "valve_0002"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_valve_2)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_valve_2 != payload['sensors'][i]['value']):
                         val_valve_2 = payload['sensors'][i]['value']
                         btn_valve_2.toggle_button_click()
 
                 # VALVE 3    
                 if (payload['sensors'][i]['id']== "valve_0003"):
+                    print(f"{payload['sensors'][i]['id']} ---- {type(val_valve_3)} ---- {type(payload['sensors'][i]['value'])}")
                     if (val_valve_3 != payload['sensors'][i]['value']):
                         val_valve_3 = payload['sensors'][i]['value']
                         btn_valve_3.toggle_button_click()
