@@ -268,10 +268,6 @@ counter = list()
 last_y = 0
 
 thread = None
-try:
-    mqttObject = MQTTHelper()
-except Exception as e:
-    print(f"Can't get data from the MQTT!!!! - {e}\n")
 
 ####################################################################################################################################################################
 ######################################################################### SCREEN 1 #################################################################################
@@ -1044,7 +1040,7 @@ def mqtt_callback(msg):
         print(f"Can't get data from the MQTT!!!! - {e}\n")
 
 try:
-    # mqttObject = MQTTHelper()
+    mqttObject = MQTTHelper()
     threading.Thread(target=mqttObject.setRecvCallBack(mqtt_callback)).start()
 except Exception as e:
     print(f"Can't connect to MQTT!!!! - {e}\n")
