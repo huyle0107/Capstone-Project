@@ -17,6 +17,9 @@ import Utilities.modbus485
 from Utilities.togglebutton import *
 from Utilities.constant import *
 
+import os
+os.environ["DISPLAY"] = ":0.0"
+
 def toggle_fullscreen(event = None):
     state = not root.attributes('-fullscreen')
     root.attributes('-fullscreen', state)
@@ -139,6 +142,7 @@ def btn_pump_2_onClick(state):
 ####################################################################################################################################################################
 ################################################################## CREATE THE MAIN WINDOW ##########################################################################
 ####################################################################################################################################################################
+
 root = tk.Tk()
 icon = PhotoImage(file="~/Desktop/MDT-128/Capstone-Project/ApplicationDesktop/icon_app.png")
 root.tk.call('wm', 'iconphoto', root._w, icon)
@@ -211,23 +215,32 @@ labelPumps = tk.Label(frame1, text="", bg="white", anchor="w", font=("Inter", 20
 labelPump1 = tk.Label(frame1, text="", bg="white", anchor="w", font=("Inter", 20))
 labelPump2 = tk.Label(frame1, text="", bg="white", anchor="w", font=("Inter", 20))
 
+val_valve_1 = 0
 btn_valve_1 = ToggleButton(frame1)
+btn_valve_1.setClickEvent(btn_valve_1_onClick)
+val_valve_2 = 0
 btn_valve_2 = ToggleButton(frame1)
+btn_valve_2.setClickEvent(btn_valve_2_onClick)
+val_valve_3 = 0
 btn_valve_3 = ToggleButton(frame1)
-btn_pump_flow_1 = ToggleButton(frame1)
-btn_pump_flow_2 = ToggleButton(frame1)
-btn_pump_flow_3 = ToggleButton(frame1)
-btn_pump_1 = ToggleButton(frame1)
-btn_pump_2 = ToggleButton(frame1)
+btn_valve_3.setClickEvent(btn_valve_3_onClick)
 
-val_valve_1 = "0"
-val_valve_2 = "0"
-val_valve_3 = "0"
-val_pump_flow_1 = "0"
-val_pump_flow_2 = "0"
-val_pump_flow_3 = "0"
-val_pump_1 = "0"
-val_pump_2 = "0"
+val_pump_flow_1 = 0
+btn_pump_flow_1 = ToggleButton(frame1)
+btn_pump_flow_1.setClickEvent(btn_pump_flow_1_onClick)
+val_pump_flow_2 = 0
+btn_pump_flow_2 = ToggleButton(frame1)
+btn_pump_flow_2.setClickEvent(btn_pump_flow_2_onClick)
+val_pump_flow_3 = 0
+btn_pump_flow_3 = ToggleButton(frame1)
+btn_pump_flow_3.setClickEvent(btn_pump_flow_3_onClick)
+
+val_pump_1 = 0
+btn_pump_1 = ToggleButton(frame1)
+btn_pump_1.setClickEvent(btn_pump_1_onClick)
+val_pump_2 = 0
+btn_pump_2 = ToggleButton(frame1)
+btn_pump_2.setClickEvent(btn_pump_2_onClick)
 
 WaterLabelTempValue = "24.8"
 WaterLabelSalValue = "468.7"
@@ -302,60 +315,34 @@ button_frame_1.bind("<Button-1>", lambda event: show_frame_2(frame2))
 
 def create_button_frame_1():
 
-    global child
-    global selected_value_frame_1
+    global child, selected_value_frame_1
+    global stringLabelAir, stringLabelSoil, stringLabelWater 
 
-    global stringLabelAir 
-    global stringLabelSoil 
-    global stringLabelWater 
+    global labelMixNutriFood, labelNutriFood1, labelNutriFood2, labelNutriFood3
+    global labelRegion, labelRegion1, labelRegion2, labelRegion3
+    global labelPumps, labelPump1, labelPump2
 
-    global WaterLabelTemp
-    global WaterLabelSal
-    global WaterLabelPH
-    global WaterLabelORP
-    global WaterLabelEC
+    global btn_valve_1, val_valve_1 
+    global btn_valve_2, val_valve_2 
+    global btn_valve_3, val_valve_3 
+    global btn_pump_flow_1, val_pump_flow_1
+    global btn_pump_flow_2, val_pump_flow_2 
+    global btn_pump_flow_3, val_pump_flow_3
+    global btn_pump_1, val_pump_1
+    global btn_pump_2, val_pump_2
 
-    global labelMixNutriFood
-    global labelNutriFood1
-    global labelNutriFood2
-    global labelNutriFood3
-    global labelRegion
-    global labelRegion1
-    global labelRegion2
-    global labelRegion3
-    global labelPumps
-    global labelPump1
-    global labelPump2
-
-    global btn_valve_1 
-    global btn_valve_2 
-    global btn_valve_3 
-    global btn_pump_flow_1
-    global btn_pump_flow_2 
-    global btn_pump_flow_3
-    global btn_pump_1
-    global btn_pump_2
-
-    global SoilLabelTemp 
-    global SoilLabelHumid 
-    global SoilLabelPH 
-    global SoilLabelEC 
-    global SoilLabelN 
-    global SoilLabelP 
-    global SoilLabelK
-
-    global AirLabelTemp 
-    global AirLabelHumid 
-    global AirLabelLux 
-    global AirLabelNoise 
-    global AirLabelPM2
-    global AirLabelPM10 
-    global AirLabelCO 
-    global AirLabelCO2 
-    global AirLabelSO2 
-    global AirLabelNO2 
-    global AirLabelO3
-    global AirLabelPressure 
+    global AirLabelTempValue, WaterLabelTempValue
+    global AirLabelHumidValue, WaterLabelSalValue
+    global AirLabelLuxValue, WaterLabelPHValue
+    global AirLabelNoiseValue, WaterLabelORPValue
+    global AirLabelPM2Value, WaterLabelECValue
+    global AirLabelPM10Value, SoilLabelTempValue
+    global AirLabelCOValue, SoilLabelHumidValue
+    global AirLabelCO2Value, SoilLabelPHValue 
+    global AirLabelSO2Value, SoilLabelECValue
+    global AirLabelNO2Value, SoilLabelNValue 
+    global AirLabelO3Value, SoilLabelPValue
+    global AirLabelPressureValue, SoilLabelKValue
 
     giatri = selected_value_frame_1.get()
 
@@ -425,14 +412,20 @@ def create_button_frame_1():
         btn_valve_1 = ToggleButton(frame1)
         btn_valve_1.setClickEvent(btn_valve_1_onClick)
         btn_valve_1.button_place(0.235, 0.305, 0.053, 0.054)
+        if (val_valve_1 == 1):
+            btn_valve_1.toggle_button_click()
 
         btn_valve_2 = ToggleButton(frame1)
         btn_valve_2.setClickEvent(btn_valve_2_onClick)
         btn_valve_2.button_place(0.235, 0.385, 0.053, 0.054)
+        if (val_valve_2 == 1):
+            btn_valve_2.toggle_button_click()
 
         btn_valve_3 = ToggleButton(frame1)
         btn_valve_3.setClickEvent(btn_valve_3_onClick)
         btn_valve_3.button_place(0.235, 0.465, 0.054, 0.054)
+        if (val_valve_3 == 1):
+            btn_valve_3.toggle_button_click()
 
         ##### SECOND GROUP BUTTON
 
@@ -451,14 +444,20 @@ def create_button_frame_1():
         btn_pump_flow_1 = ToggleButton(frame1)
         btn_pump_flow_1.setClickEvent(btn_pump_flow_1_onClick)
         btn_pump_flow_1.button_place(0.235, 0.565, 0.053, 0.054)
+        if (val_pump_flow_1 == 1):
+            btn_pump_flow_1.toggle_button_click()
 
         btn_pump_flow_2 = ToggleButton(frame1)
         btn_pump_flow_2.setClickEvent(btn_pump_flow_2_onClick)
         btn_pump_flow_2.button_place(0.235, 0.645, 0.053, 0.054)
+        if (val_pump_flow_2 == 1):
+            btn_pump_flow_2.toggle_button_click()
 
         btn_pump_flow_3 = ToggleButton(frame1)
         btn_pump_flow_3.setClickEvent(btn_pump_flow_3_onClick)
         btn_pump_flow_3.button_place(0.235, 0.725, 0.053, 0.054)
+        if (val_pump_flow_3 == 1):
+            btn_pump_flow_3.toggle_button_click()
 
         ##### THIRD GROUP BUTTON
 
@@ -474,10 +473,14 @@ def create_button_frame_1():
         btn_pump_1 = ToggleButton(frame1)
         btn_pump_1.setClickEvent(btn_pump_1_onClick)
         btn_pump_1.button_place(0.235, 0.825, 0.053, 0.054)
+        if (val_pump_1 == 1):
+            btn_pump_1.toggle_button_click()
 
         btn_pump_2 = ToggleButton(frame1)
         btn_pump_2.setClickEvent(btn_pump_2_onClick)
         btn_pump_2.button_place(0.235, 0.905, 0.053, 0.054)
+        if (val_pump_2 == 1):
+            btn_pump_2.toggle_button_click()
 
     ###################################################### AIR & SOIL STATION ########################################################################
 
@@ -592,54 +595,29 @@ tree.bind("<ButtonRelease-1>", lambda event: setattr(event, 'y', 0))
 def mqtt_callback(msg):
 
     datachange = {'station_id': "water_0001"}
-    global dataset
-    global counter_air_soil
-    global counter_water
+    global dataset, counter_air_soil, counter_water
 
-    global val_valve_1 
-    global val_valve_2 
-    global val_valve_3 
-    global val_pump_flow_1
-    global val_pump_flow_2 
-    global val_pump_flow_3
-    global val_pump_1
-    global val_pump_2
+    global btn_valve_1, val_valve_1 
+    global btn_valve_2, val_valve_2 
+    global btn_valve_3, val_valve_3 
+    global btn_pump_flow_1, val_pump_flow_1
+    global btn_pump_flow_2, val_pump_flow_2 
+    global btn_pump_flow_3, val_pump_flow_3
+    global btn_pump_1, val_pump_1
+    global btn_pump_2, val_pump_2
 
-    global btn_valve_1 
-    global btn_valve_2 
-    global btn_valve_3 
-    global btn_pump_flow_1
-    global btn_pump_flow_2 
-    global btn_pump_flow_3
-    global btn_pump_1
-    global btn_pump_2
-
-    global WaterLabelTempValue
-    global WaterLabelSalValue
-    global WaterLabelPHValue
-    global WaterLabelORPValue
-    global WaterLabelECValue
-
-    global SoilLabelTempValue
-    global SoilLabelHumidValue
-    global SoilLabelPHValue 
-    global SoilLabelECValue 
-    global SoilLabelNValue 
-    global SoilLabelPValue  
-    global SoilLabelKValue  
-
-    global AirLabelTempValue
-    global AirLabelHumidValue
-    global AirLabelLuxValue
-    global AirLabelNoiseValue
-    global AirLabelPM2Value
-    global AirLabelPM10Value
-    global AirLabelCOValue
-    global AirLabelCO2Value
-    global AirLabelSO2Value 
-    global AirLabelNO2Value
-    global AirLabelO3Value
-    global AirLabelPressureValue
+    global AirLabelTempValue, WaterLabelTempValue
+    global AirLabelHumidValue, WaterLabelSalValue
+    global AirLabelLuxValue, WaterLabelPHValue
+    global AirLabelNoiseValue, WaterLabelORPValue
+    global AirLabelPM2Value, WaterLabelECValue
+    global AirLabelPM10Value, SoilLabelTempValue
+    global AirLabelCOValue, SoilLabelHumidValue
+    global AirLabelCO2Value, SoilLabelPHValue 
+    global AirLabelSO2Value, SoilLabelECValue
+    global AirLabelNO2Value, SoilLabelNValue 
+    global AirLabelO3Value, SoilLabelPValue
+    global AirLabelPressureValue, SoilLabelKValue
 
     current_time = datetime.now().strftime("%d/%m - %H:%M")
 
@@ -930,70 +908,70 @@ def mqtt_callback(msg):
         
         if (payload['station_id'] == "pump_station_0001"):
             for i in range(len(payload['sensors'])):
-                print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+                # print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
                 
                 # PUMP 1
                 if (payload['sensors'][i]['id'] == "pump_0001"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_flow_1)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_pump_flow_1 != payload['sensors'][i]['value']):
-                        val_pump_flow_1 = payload['sensors'][i]['value']
+                    print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_1} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_pump_flow_1 != int(payload['sensors'][i]['value'])):
+                        val_pump_flow_1 = int(payload['sensors'][i]['value'])
                         btn_pump_flow_1.toggle_button_click()
 
                 # PUMP 2
                 if (payload['sensors'][i]['id'] == "pump_0002"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_flow_2)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_pump_flow_2 != payload['sensors'][i]['value']):
-                        val_pump_flow_2 = payload['sensors'][i]['value']
+                    print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_2} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_pump_flow_2 != int(payload['sensors'][i]['value'])):
+                        val_pump_flow_2 = int(payload['sensors'][i]['value'])
                         btn_pump_flow_2.toggle_button_click()
 
                 # PUMP 3    
                 if (payload['sensors'][i]['id']== "pump_0003"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_flow_3)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_pump_flow_3 != payload['sensors'][i]['value']):
-                        val_pump_flow_3 = payload['sensors'][i]['value']
+                    print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_3} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_pump_flow_3 != int(payload['sensors'][i]['value'])):
+                        val_pump_flow_3 = int(payload['sensors'][i]['value'])
                         btn_pump_flow_3.toggle_button_click()
 
                 # PUMP 4   
                 if (payload['sensors'][i]['id']== "pump_0004"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_1)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_pump_1 != payload['sensors'][i]['value']):
-                        val_pump_1 = payload['sensors'][i]['value']
+                    print(f"{payload['sensors'][i]['id']} --- {val_pump_1} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_pump_1 != int(payload['sensors'][i]['value'])):
+                        val_pump_1 = int(payload['sensors'][i]['value'])
                         btn_pump_1.toggle_button_click()
 
                 # PUMP 5    
                 if (payload['sensors'][i]['id'] == "pump_0005"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_pump_2)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_pump_2 != payload['sensors'][i]['value']):
-                        val_pump_2 = payload['sensors'][i]['value']
+                    print(f"{payload['sensors'][i]['id']} --- {val_pump_2} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_pump_2 != int(payload['sensors'][i]['value'])):
+                        val_pump_2 = int(payload['sensors'][i]['value'])
                         btn_pump_2.toggle_button_click()
         
         ######################################################### VALVE CONTROLLER #######################################################################
         
         if (payload['station_id'] == "valve_station_0001"):
             for i in range(len(payload['sensors'])):
-                print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+                # print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
                 
                 # VALVE 1
                 if (payload['sensors'][i]['id'] == "valve_0001"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_valve_1)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_valve_1 != payload['sensors'][i]['value']):
-                        val_valve_1 = payload['sensors'][i]['value']
+                    print(f"{payload['sensors'][i]['id']} --- {val_valve_1} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_valve_1 != int(payload['sensors'][i]['value'])):
+                        val_valve_1 = int(payload['sensors'][i]['value'])
                         btn_valve_1.toggle_button_click()
 
                 # VALVE 2
                 if (payload['sensors'][i]['id'] == "valve_0002"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_valve_2)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_valve_2 != payload['sensors'][i]['value']):
-                        val_valve_2 = payload['sensors'][i]['value']
+                    print(f"{payload['sensors'][i]['id']} --- {val_valve_2} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_valve_2 != int(payload['sensors'][i]['value'])):
+                        val_valve_2 = int(payload['sensors'][i]['value'])
                         btn_valve_2.toggle_button_click()
 
                 # VALVE 3    
                 if (payload['sensors'][i]['id']== "valve_0003"):
-                    print(f"{payload['sensors'][i]['id']} ---- {type(val_valve_3)} ---- {type(payload['sensors'][i]['value'])}")
-                    if (val_valve_3 != payload['sensors'][i]['value']):
-                        val_valve_3 = payload['sensors'][i]['value']
-                        btn_valve_3.toggle_button_click()
-        
+                    print(f"{payload['sensors'][i]['id']} --- {val_valve_3} --- {int(payload['sensors'][i]['value'])}")
+                    if (val_valve_3 != int(payload['sensors'][i]['value'])):
+                        val_valve_3 = int(payload['sensors'][i]['value'])
+                        btn_valve_3.toggle_button_click()    
+
         ########################################################### STORE VALUE #########################################################################        
     
         if datachange['station_id'] == "water_0001":

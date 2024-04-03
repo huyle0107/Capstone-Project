@@ -1,4 +1,4 @@
-from datetime import timedelta, timezone
+from datetime import datetime
 import tkinter as tk
 from tkinter import PhotoImage, ttk
 from MQTT import *
@@ -16,15 +16,6 @@ from Utilities.modbus485 import *
 import Utilities.modbus485
 from Utilities.togglebutton import *
 from Utilities.constant import *
-
-def toggle_fullscreen(event = None):
-    state = not root.attributes('-fullscreen')
-    root.attributes('-fullscreen', state)
-    
-    if state:
-        root.geometry(f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0")
-    else:
-        root.geometry("1024x600")  
 
 # Function to handle touch events
 def handle_touch(event):
@@ -139,13 +130,7 @@ def btn_pump_2_onClick(state):
 
 root = tk.Tk()
 icon = PhotoImage(file = "E:\Documents\Capstone Project\Capstone-Project\ApplicationDesktop\icon_app.png")
-# icon = PhotoImage(file="~/Desktop/MDT-128/Computer-Engineering-Project/icon_app.png")
 root.tk.call('wm', 'iconphoto', root._w, icon)
-
-# root.bind("<F11>", toggle_fullscreen)
-# root.bind("<Escape>", toggle_fullscreen)
-# root.attributes('-fullscreen', True)
-# root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
 
 root.geometry("1024x600") 
 root.wm_attributes("-topmost", 1)
@@ -923,6 +908,7 @@ def mqtt_callback(msg):
                     AirLabelO3Value = round(float(payload['sensors'][i]['value']), 2)
 
         ########################################################## PUMP CONTROLLER #######################################################################
+        
         if (payload['station_id'] == "pump_station_0001"):
             for i in range(len(payload['sensors'])):
                 print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
@@ -931,33 +917,39 @@ def mqtt_callback(msg):
                 if (payload['sensors'][i]['id'] == "pump_0001"):
                     if (val_pump_flow_1 != payload['sensors'][i]['value']):
                         val_pump_flow_1 = payload['sensors'][i]['value']
+                        btn_pump_flow_1_onClick(payload['sensors'][i]['value'])
                         btn_pump_flow_1.toggle_button_click()
 
                 # PUMP 2
                 if (payload['sensors'][i]['id'] == "pump_0002"):
                     if (val_pump_flow_2 != payload['sensors'][i]['value']):
                         val_pump_flow_2 = payload['sensors'][i]['value']
+                        btn_pump_flow_2_onClick(payload['sensors'][i]['value'])
                         btn_pump_flow_2.toggle_button_click()
 
                 # PUMP 3    
                 if (payload['sensors'][i]['id']== "pump_0003"):
                     if (val_pump_flow_3 != payload['sensors'][i]['value']):
                         val_pump_flow_3 = payload['sensors'][i]['value']
+                        btn_pump_flow_3_onClick(payload['sensors'][i]['value'])
                         btn_pump_flow_3.toggle_button_click()
 
                 # PUMP 4   
                 if (payload['sensors'][i]['id']== "pump_0004"):
                     if (val_pump_1 != payload['sensors'][i]['value']):
                         val_pump_1 = payload['sensors'][i]['value']
+                        btn_pump_1_onClick(payload['sensors'][i]['value'])
                         btn_pump_1.toggle_button_click()
 
                 # PUMP 5    
                 if (payload['sensors'][i]['id'] == "pump_0005"):
                     if (val_pump_2 != payload['sensors'][i]['value']):
                         val_pump_2 = payload['sensors'][i]['value']
+                        btn_pump_2_onClick(payload['sensors'][i]['value'])
                         btn_pump_2.toggle_button_click()
         
         ######################################################### VALVE CONTROLLER #######################################################################
+        
         if (payload['station_id'] == "valve_station_0001"):
             for i in range(len(payload['sensors'])):
                 print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
@@ -966,19 +958,23 @@ def mqtt_callback(msg):
                 if (payload['sensors'][i]['id'] == "valve_0001"):
                     if (val_valve_1 != payload['sensors'][i]['value']):
                         val_valve_1 = payload['sensors'][i]['value']
+                        btn_valve_1_onClick(payload['sensors'][i]['value'])
                         btn_valve_1.toggle_button_click()
 
                 # VALVE 2
                 if (payload['sensors'][i]['id'] == "valve_0002"):
                     if (val_valve_2 != payload['sensors'][i]['value']):
                         val_valve_2 = payload['sensors'][i]['value']
+                        btn_valve_2_onClick(payload['sensors'][i]['value'])
                         btn_valve_2.toggle_button_click()
 
                 # VALVE 3    
                 if (payload['sensors'][i]['id']== "valve_0003"):
                     if (val_valve_3 != payload['sensors'][i]['value']):
                         val_valve_3 = payload['sensors'][i]['value']
-                        btn_valve_3.toggle_button_click()
+                        btn_valve_3_onClick(payload['sensors'][i]['value'])
+                        btn_valve_3.toggle_button_click()    
+
         
         ########################################################### STORE VALUE #########################################################################        
     
