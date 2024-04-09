@@ -94,8 +94,8 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   SerialMon.print("CURRENT =");
-                  float temp = int16_t((receivedData[3] << 8 | receivedData[4]));
-                  Current = (temp - 44 - temp / 10.0) / 1000.0;
+                  float Current = int16_t((receivedData[3] << 8 | receivedData[4]) + 150) / 1000.0;
+                  //Current = (temp - 44 - (temp / 10.0)) / 1000.0;
                   SerialMon.println(data.floatToString(Current));
                   
                   Power = Voltage * Current;
@@ -348,8 +348,7 @@ void SoilAirStateMachine(){
                   SerialMon.print("Soil_K =");
                   soil_K = int16_t((receivedData[7] << 8 | receivedData[8]));
                   SerialMon.println(data.floatToString(soil_K));
-                  //state = RELAYOFF;
-                  state = WAIT_SEND;
+                  state = RELAYOFF;
                 }              
               }
               break;
@@ -535,8 +534,7 @@ void SoilAirStateMachine(){
     case SYSTEMOFF:
               if(timer_flag){
                 setTimer1(timeRead);
-                state = READ_VOLTAGE;
-                //state = RELAYON;
+                state = RELAYON;
               }
               break;
     default:
