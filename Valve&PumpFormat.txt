@@ -1,0 +1,45 @@
+{
+  'station_id':'pump_station_0001',
+  'station_name':'Trạm tưới tiêu',
+  'sensors':[
+    {
+      'id':'pump_0001',
+      'value':'0'
+    },
+    {
+      'id':'pump_0002',
+      'value':'0'
+    },
+    {
+      'id':'pump_0003',
+      'value':'0'
+    },
+    {
+      'id':'pump_0004',
+      'value':'0'
+    },
+    {
+      'id':'pump_0005',
+      'value':'0'
+    }
+  ]
+}
+
+{
+  'station_id':'valve_station_0001',
+  'station_name':'Trộn Dinh Dưỡng',
+  'sensors':[
+    {
+      'id':'valve_0001',
+      'value':'0'
+    },
+    {
+      'id':'valve_0002',
+      'value':'0'
+    },
+    {
+      'id':'valve_0001',
+      'value':'0'
+    }
+  ]
+}
