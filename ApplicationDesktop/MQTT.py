@@ -18,7 +18,8 @@ class MQTTHelper:
     MQTT_TOPIC_SUB_WATER = "/innovation/watermonitoring/WSNs"
     MQTT_TOPIC_SUB_PUMP = "/innovation/pumpcontroller/WSNs"
     MQTT_TOPIC_SUB_VALVE = "/innovation/valvecontroller/WSNs"
-
+    MQTT_TOPIC_SUB_SCHEDULES = "/innovation/watermonitoring/WSNs/schedules"
+    
     MQTT_TOPIC_PUB_PUMP = "/innovation/pumpcontroller"
     MQTT_TOPIC_PUB_VALVE = "/innovation/valvecontroller"
 
@@ -30,17 +31,18 @@ class MQTTHelper:
         client.subscribe(self.MQTT_TOPIC_SUB_WATER)
         client.subscribe(self.MQTT_TOPIC_SUB_PUMP)
         client.subscribe(self.MQTT_TOPIC_SUB_VALVE)
+        client.subscribe(self.MQTT_TOPIC_SUB_SCHEDULES)
 
     def mqtt_subscribed(self, client, userdata, mid, granted_qos):
         print("\nSubscribed to Topic!!!")
 
     def mqtt_published(self, client, topic, id, value):
         if (topic == self.MQTT_TOPIC_PUB_PUMP):
-            print("Publish pump to Topic!!!")
+            print(f"Publish [{id} --- {value}] to Topic!!!\n")
             data = json.loads(json_pump.replace("'", '"'))
             
         if (topic == self.MQTT_TOPIC_PUB_VALVE):
-            print("Publish valve to Topic!!!")
+            print(f"Publish [{id} --- {value}] to Topic!!!\n")
             data = json.loads(json_valve.replace("'", '"'))
 
         for sensor in data.get('sensors', []):
