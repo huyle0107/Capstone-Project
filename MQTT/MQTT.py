@@ -45,32 +45,20 @@ data_push = {
     "station_name": "SCHE 0001",
     "schedule": [
         {
-            "cycle": 5,
-            "flow1": 20,
-            "flow2": 10,
-            "flow3": 20,
-            "isActive": True,
             "schedulerName": "LỊCH TƯỚI 1",
-            "startTime": "18:30",
-            "stopTime": "18:40"
-        },
-        {
-            "cycle": 120,
-            "flow1": 50,
-            "flow2": 20,
-            "flow3": 20,
-            "isActive": False,
-            "schedulerName": "LỊCH TƯỚI 2",
+            "isActive": "flow1",
             "startTime": "8:15",
             "stopTime": "8:45"
         },
         {
-            "cycle": 15,
-            "flow1": 20,
-            "flow2": 20,
-            "flow3": 20,
-            "isActive": False,
+            "schedulerName": "LỊCH TƯỚI 2",
+            "isActive": "pump2",
+            "startTime": "18:30",
+            "stopTime": "18:40"
+        },
+        {
             "schedulerName": "LỊCH TƯỚI 3",
+            "isActive": "valve1",
             "startTime": "7:15",
             "stopTime": "7:45"
         }
@@ -187,20 +175,38 @@ def mqtt_recv_message(client, userdata, message):
 
         #######################################################################
     try:
-        # Danh sách thời gian ban đầu
-        testList = list()
+        testList = {}
+        sorted_times = []
 
-        # Thêm thời gian bắt đầu và kết thúc từ mỗi lịch vào danh sách
-        for schedule in payload["schedule"]:
-            testList.append(schedule["startTime"])
-            testList.append(schedule["stopTime"])
-            print(f"Name: {schedule['schedulerName']} --- StartTime: {schedule['startTime']} --- StopTime: {schedule['stopTime']}")
+        # Sắp xếp lịch theo thời gian bắt đầu
+        sorted_schedules = sorted(payload["schedule"], key=lambda x: datetime.strptime(x["startTime"], "%H:%M"))
 
-        # Chuyển đổi danh sách thời gian ban đầu thành giây và sắp xếp chúng
-        sorted_time_seconds = sorted(datetime.strptime(time_str, "%H:%M").time().hour * 3600 + datetime.strptime(time_str, "%H:%M").time().minute * 60 for time_str in testList)
+        # In ra danh sách thời gian đã thêm vào từ điển
+        print("Sorted schedules:")
+        # Tạo một từ điển ánh xạ giữa các giá trị 'isActive' cũ và mới
+        mapping = {
+            'flow1': 'pump_0001',
+            'flow2': 'pump_0002',
+            'flow3': 'pump_0003',
+            'pump1': 'pump_0004',
+            'pump2': 'pump_0005',
+            'valve1': 'valve_0001',
+            'valve2': 'valve_0002',
+            'valve3': 'valve_0003'
+        }
 
-        # Chuyển đổi lại các giây đã sắp xếp thành định dạng thời gian ban đầu
-        sorted_times = [datetime.utcfromtimestamp(seconds).strftime('%H:%M') for seconds in sorted_time_seconds]
+        # Duyệt qua danh sách các lịch đã sắp xếp
+        for i, schedule in enumerate(sorted_schedules):
+            schedule_name = schedule["schedulerName"]
+            if schedule['isActive'] in mapping:
+                schedule['isActive'] = mapping[schedule['isActive']]
+
+            testList[schedule_name] = {"isActive": schedule["isActive"], "startTime": schedule["startTime"], "stopTime": schedule["stopTime"]}
+            sorted_times.append(schedule['startTime'])
+            sorted_times.append(schedule['stopTime'])
+            
+            print(f"Name: {schedule_name} --- IsActive: {schedule['isActive']} --- StartTime: {schedule['startTime']} --- StopTime: {schedule['stopTime']}")
+
         print(f"\nSortedList: {sorted_times}\n")
     except Exception as e:
         print(f"\nFORMAT JSON SCHEDULES WRONG!!!\n")
@@ -285,7 +291,7 @@ try:
         print("\nStarting to Publish\n")
         mqttClient.publish(MQTT_TOPIC_SUB_SCHEDULES, json.dumps(data_push))
 
-        # mqtt_published(mqttClient, MQTT_TOPIC_PUB_PUMP, "pump_0001", 0)
+        # mqtt_published(mqttClient, MQTT_TOPIC_PUB_PUMP, "pump_0001", 1)
         # mqtt_published(mqttClient, MQTT_TOPIC_PUB_PUMP, "pump_0002", 0)
         # mqtt_published(mqttClient, MQTT_TOPIC_PUB_PUMP, "pump_0003", 0)
         # mqtt_published(mqttClient, MQTT_TOPIC_PUB_PUMP, "pump_0004", 0)

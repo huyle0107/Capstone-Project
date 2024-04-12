@@ -1,13 +1,16 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import tkinter as tk
 from tkinter import PhotoImage, ttk
 from MQTT import *
 import threading
 import json
 import requests
+import sqlite3
+import os
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from time import time, sleep
 
 import serial as serial
 from Utilities import modbus485
@@ -19,6 +22,7 @@ from Utilities.constant import *
 
 import os
 os.environ["DISPLAY"] = ":0.0"
+checkLoop = True
 
 def toggle_fullscreen(event = None):
     state = not root.attributes('-fullscreen')
@@ -40,13 +44,113 @@ def show_frame_1(frame):
 def remove_border(event):
     # Remove focus from the Radiobutton to prevent border around the text
     event.widget.master.focus_set()
-    
+
+def on_label_click(event):
+    global child
+    global selected_value_frame_1
+
+    child = []
+    selected_value_frame_1.set("IRRIGATION SCHEDULE")
+
+    create_button_frame_1()
+
 # Function to handle touch scroll event
 def handle_touch_scroll(event):
     global last_y
     delta = event.y - last_y
     tree.yview_scroll(4 * int(delta / 120), "units")
     last_y = event.y
+
+def is_time_passed(time_str):
+    time_obj = datetime.strptime(time_str, "%H:%M").time()
+    current_time_obj = datetime.strptime(datetime.now().strftime("%H:%M"), "%H:%M").time()  
+    if current_time_obj >= time_obj:
+        return True
+    else:
+        return False
+
+def check_time():
+    last_time = time()
+    while True:
+        current_time = time()
+        if int(current_time) != int(last_time):
+            display_irrigation_schedule()
+            last_time = current_time
+        sleep(10)  
+
+####################################################################################################################################################################
+############################################################## CREATE FILE DB IF IT NOT EXIST ######################################################################
+####################################################################################################################################################################
+
+database = "test.db"
+
+# Hàm tạo kết nối đến database
+def create_connection(db_file):
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+        return conn
+    except sqlite3.Error as e:
+        print(e)
+    return conn
+
+# Hàm thêm dữ liệu vào bảng air_station
+def add_air_station(conn, air_station):
+    sql = ''' INSERT INTO air_station(time, station_id, sensor_id, value)
+              VALUES(?, ?, ?, ?) '''
+    conn.execute(sql, air_station)
+
+# Hàm thêm dữ liệu vào bảng water_station
+def add_water_station(conn, water_station):
+    sql = ''' INSERT INTO water_station(time, station_id, sensor_id, value)
+              VALUES(?, ?, ?, ?) '''
+    conn.execute(sql, water_station)
+
+# Kiểm tra nếu file test.db không tồn tại, tạo mới và thêm dữ liệu
+if not os.path.exists(database):
+    print("File test.db chưa tồn tại. Tạo mới file và thêm dữ liệu.")
+    conn = create_connection(database)
+    
+    with conn:
+        cur = conn.cursor()
+        cur.execute('''CREATE TABLE IF NOT EXISTS air_station (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,        
+                            time TEXT NULL,
+                            station_id TEXT NOT NULL,
+                            sensor_id TEXT NOT NULL,
+                            value TEXT NOT NULL
+                        )''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS water_station (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,        
+                            time TEXT NULL,
+                            station_id TEXT NOT NULL,
+                            sensor_id TEXT NOT NULL,
+                            value TEXT NOT NULL
+                        )''')
+        
+    print("\nSTART ADD AIR DB\n")
+
+    value_air = requests.get("https://wsndatasheet.fullmail.xyz/air_0001/AIR%200001")
+    a = json.loads(value_air.text)
+
+    for i in range(len(a["sensors"])):
+        with conn:
+            air_station_data = (a['sensors'][i]['timer'], a['station_id'], a['sensors'][i]['sensor_id'], a['sensors'][i]['sensor_value'])
+            print(f"{a['sensors'][i]['timer']} --- {a['station_id']} --- {a['sensors'][i]['sensor_id']} --- {a['sensors'][i]['sensor_value']}")
+            add_air_station(conn, air_station_data)
+
+    print("\nSTART ADD WATER DB\n")
+            
+    value_water = requests.get("https://wsndatasheet.fullmail.xyz/water_0001/WATER%200001")
+    b = json.loads(value_water.text)
+
+    for i in range(len(b["sensors"])):
+        with conn:
+            water_station_data = (b['sensors'][i]['timer'], b['station_id'], b['sensors'][i]['sensor_id'], b['sensors'][i]['sensor_value'])
+            print(f"{b['sensors'][i]['timer']} --- {b['station_id']} --- {b['sensors'][i]['sensor_id']} --- {b['sensors'][i]['sensor_value']}")
+            add_water_station(conn, water_station_data)
+else:
+    print("File test.db có tồn tại.")
 
 ####################################################################################################################################################################
 ########################################################## CREATE BUTTON FOR FUNCTION PUMP & MIXER #################################################################
@@ -61,81 +165,97 @@ m485 = Utilities.modbus485.Modbus485(ser)
 
 def btn_valve_1_onClick(state):
     global mqttObject
+    global val_valve_1 
     print("Button1 is click", state)
     if state:
         m485.modbus485_send(relay1_ON)
     else:
         m485.modbus485_send(relay1_OFF)
+    val_valve_1 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0001", state)
     pass
 
 def btn_valve_2_onClick(state):
     global mqttObject
+    global val_valve_2 
     print("Button2 is click", state)
     if state:
         m485.modbus485_send(relay2_ON)
     else:
         m485.modbus485_send(relay2_OFF)
+    val_valve_2 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0002", state)
     pass
 
 def btn_valve_3_onClick(state):
     global mqttObject
+    global val_valve_3
     print("Button3 is click", state)
     if state:
         m485.modbus485_send(relay3_ON)
     else:
         m485.modbus485_send(relay3_OFF)
+    val_valve_3 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0003", state)
     pass
 
 def btn_pump_flow_1_onClick(state):
     global mqttObject
+    global val_pump_flow_1
     print("Flow 1 is click", state)
     if state:
         m485.modbus485_send(relay4_ON)
     else:
         m485.modbus485_send(relay4_OFF)
+    val_pump_flow_1 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0001", state)
     pass
 
 def btn_pump_flow_2_onClick(state):
     global mqttObject
+    global val_pump_flow_2 
     print("Flow 2 is click", state)
     if state:
         m485.modbus485_send(relay5_ON)
     else:
         m485.modbus485_send(relay5_OFF)
+    val_pump_flow_2 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0002", state)
     pass
 
 def btn_pump_flow_3_onClick(state):
     global mqttObject
+    global val_pump_flow_3
     print("Flow 3 is click", state)
     if state:
         m485.modbus485_send(relay6_ON)
     else:
         m485.modbus485_send(relay6_OFF)
+    val_pump_flow_3 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0003", state)
     pass
 
 def btn_pump_1_onClick(state):
     global mqttObject
+    global val_pump_1 
     print("Pump 1 is click", state)
     if state:
         m485.modbus485_send(relay7_ON)
     else:
         m485.modbus485_send(relay7_OFF)
+    val_pump_1 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0004", state)
     pass
 
 def btn_pump_2_onClick(state):
     global mqttObject
+    global val_pump_2
     print("Pump 2 is click", state)
     if state:
         m485.modbus485_send(relay8_ON)
     else:
         m485.modbus485_send(relay8_OFF)
+    val_pump_2 = state
     mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0005", state)
     pass
 
@@ -275,7 +395,12 @@ dataset = list()
 child = list()
 counter_air_soil = 0
 counter_water = 0
+counter_schedule = 0
 counter = list()
+sorted_schedule = list()
+sorted_times = list()
+status = list()
+schedule_labels = list()
 
 # Variables to track touch scroll movement
 last_y = 0
@@ -315,12 +440,31 @@ button_frame_1.bind("<Button-1>", lambda event: show_frame_2(frame2))
 
 def create_button_frame_1():
 
-    global child, selected_value_frame_1
-    global stringLabelAir, stringLabelSoil, stringLabelWater 
+    global child
+    global selected_value_frame_1
+    global schedule_labels
 
-    global labelMixNutriFood, labelNutriFood1, labelNutriFood2, labelNutriFood3
-    global labelRegion, labelRegion1, labelRegion2, labelRegion3
-    global labelPumps, labelPump1, labelPump2
+    global stringLabelAir 
+    global stringLabelSoil 
+    global stringLabelWater 
+
+    global WaterLabelTemp
+    global WaterLabelSal
+    global WaterLabelPH
+    global WaterLabelORP
+    global WaterLabelEC
+
+    global labelMixNutriFood
+    global labelNutriFood1
+    global labelNutriFood2
+    global labelNutriFood3
+    global labelRegion
+    global labelRegion1
+    global labelRegion2
+    global labelRegion3
+    global labelPumps
+    global labelPump1
+    global labelPump2
 
     global btn_valve_1, val_valve_1 
     global btn_valve_2, val_valve_2 
@@ -331,18 +475,26 @@ def create_button_frame_1():
     global btn_pump_1, val_pump_1
     global btn_pump_2, val_pump_2
 
-    global AirLabelTempValue, WaterLabelTempValue
-    global AirLabelHumidValue, WaterLabelSalValue
-    global AirLabelLuxValue, WaterLabelPHValue
-    global AirLabelNoiseValue, WaterLabelORPValue
-    global AirLabelPM2Value, WaterLabelECValue
-    global AirLabelPM10Value, SoilLabelTempValue
-    global AirLabelCOValue, SoilLabelHumidValue
-    global AirLabelCO2Value, SoilLabelPHValue 
-    global AirLabelSO2Value, SoilLabelECValue
-    global AirLabelNO2Value, SoilLabelNValue 
-    global AirLabelO3Value, SoilLabelPValue
-    global AirLabelPressureValue, SoilLabelKValue
+    global SoilLabelTemp 
+    global SoilLabelHumid 
+    global SoilLabelPH 
+    global SoilLabelEC 
+    global SoilLabelN 
+    global SoilLabelP 
+    global SoilLabelK
+
+    global AirLabelTemp 
+    global AirLabelHumid 
+    global AirLabelLux 
+    global AirLabelNoise 
+    global AirLabelPM2
+    global AirLabelPM10 
+    global AirLabelCO 
+    global AirLabelCO2 
+    global AirLabelSO2 
+    global AirLabelNO2 
+    global AirLabelO3
+    global AirLabelPressure 
 
     giatri = selected_value_frame_1.get()
 
@@ -369,6 +521,9 @@ def create_button_frame_1():
     for labelAir in labelsAir_to_delete:
         labelAir.config(text = "")
         labelAir.place(relx=0, rely=0, relwidth=0, relheight=0)
+
+    for label in schedule_labels:
+        label.destroy()
 
     ########################################################## WATER STATION #####################################################################
 
@@ -486,8 +641,8 @@ def create_button_frame_1():
 
     elif giatri == "Air & Soil Station":
 
-        child = ["Air Temp", "Air Humidity", "Noise", "PM2.5", "PM10", "ATMOSPHERE", "Lux", "CO", "CO2", "SO2", "NO2", "O3",
-                  "Soil Temp", "Soil Humidity", "PH", "EC", "Nitrogen", "Phosphorus", "Potassium"]
+        child = ["Air Temp", "Air Humid", "Noise", "PM2.5", "PM10", "ATM", "Lux", "CO", "CO2", "SO2", "NO2", "O3",
+                  "Soil Temp", "Soil Humid", "PH", "EC", "Nitrogen", "Phosphorus", "Potassium"]
         
         string2Frame1.config(text = "HISTORY\nCHART\nOF AIR\n& SOIL\nSTATION\nVALUES")
 
@@ -556,6 +711,11 @@ def create_button_frame_1():
         AirLabelNO2 = tk.Label(frame1, text=f"NO2 (ppm)\n{AirLabelNO2Value}", bg="white", anchor="w", font=("Inter", 15, "bold"), fg="green")
         AirLabelNO2.place(relx=0.362, rely=0.5, relwidth=0.1191, relheight=0.07)
 
+    ###################################################### IRRIGATION SCHEDULE ##################################################################
+    
+    elif giatri == "IRRIGATION SCHEDULE":
+        display_irrigation_schedule()
+
 ####################################################################################################################################################################
 ################################################################## CREATE A TREEVIEW WIDGET ########################################################################
 ####################################################################################################################################################################
@@ -589,35 +749,278 @@ tree.bind("<B1-Motion>", handle_touch_scroll)
 tree.bind("<ButtonRelease-1>", lambda event: setattr(event, 'y', 0))
 
 ####################################################################################################################################################################
+####################################################################### VALVE CONTROLLER ################################################################################
+####################################################################################################################################################################
+
+def valve_station_toggle(payload, condition, check):   
+
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3
+
+    global btn_valve_1 
+    global btn_valve_2 
+    global btn_valve_3
+
+    if (condition == 0):
+        for i in range(len(payload['sensors'])):
+            # print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+            
+            # VALVE 1
+            if (payload['sensors'][i]['id'] == "valve_0001"):
+                print(f"{payload['sensors'][i]['id']} --- {val_valve_1} --- {int(payload['sensors'][i]['value'])}")
+                if (val_valve_1 != int(payload['sensors'][i]['value'])):
+                    val_valve_1 = int(payload['sensors'][i]['value'])
+                    btn_valve_1.toggle_button_click()
+            # VALVE 2
+            if (payload['sensors'][i]['id'] == "valve_0002"):
+                print(f"{payload['sensors'][i]['id']} --- {val_valve_2} --- {int(payload['sensors'][i]['value'])}")
+                if (val_valve_2 != int(payload['sensors'][i]['value'])):
+                    val_valve_2 = int(payload['sensors'][i]['value'])
+                    btn_valve_2.toggle_button_click()
+            # VALVE 3    
+            if (payload['sensors'][i]['id']== "valve_0003"):
+                print(f"{payload['sensors'][i]['id']} --- {val_valve_3} --- {int(payload['sensors'][i]['value'])}")
+                if (val_valve_3 != int(payload['sensors'][i]['value'])):
+                    val_valve_3 = int(payload['sensors'][i]['value'])
+                    btn_valve_3.toggle_button_click() 
+    else:
+        # VALVE 1
+        if (payload == "valve1"):
+            print(f"{payload} --- {val_valve_1} --- {check}")
+            if (val_valve_1 != check):
+                val_valve_1 = check
+                btn_valve_1.toggle_button_click()
+        # VALVE 2
+        if (payload == "valve2"):
+            print(f"{payload} --- {val_valve_2} --- {check}")
+            if (val_valve_2 != check):
+                val_valve_2 = check
+                btn_valve_2.toggle_button_click()
+        # VALVE 3    
+        if (payload == "valve3"):
+            print(f"{payload} --- {val_valve_3} --- {check}")
+            if (val_valve_3 != check):
+                val_valve_3 = check
+                btn_valve_3.toggle_button_click() 
+
+####################################################################################################################################################################
+####################################################################### PUMP CONTROLLER ################################################################################
+####################################################################################################################################################################
+
+def pump_station_toggle(payload, condition, check): 
+
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3
+    global val_pump_1
+    global val_pump_2
+
+    global btn_pump_flow_1
+    global btn_pump_flow_2 
+    global btn_pump_flow_3
+    global btn_pump_1
+    global btn_pump_2
+
+    if (condition == 0):
+        for i in range(len(payload['sensors'])):
+            # print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
+            
+            # PUMP 1
+            if (payload['sensors'][i]['id'] == "pump_0001"):
+                print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_1} --- {int(payload['sensors'][i]['value'])}")
+                if (val_pump_flow_1 != int(payload['sensors'][i]['value'])):
+                    val_pump_flow_1 = int(payload['sensors'][i]['value'])
+                    btn_pump_flow_1.toggle_button_click()
+
+            # PUMP 2
+            if (payload['sensors'][i]['id'] == "pump_0002"):
+                print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_2} --- {int(payload['sensors'][i]['value'])}")
+                if (val_pump_flow_2 != int(payload['sensors'][i]['value'])):
+                    val_pump_flow_2 = int(payload['sensors'][i]['value'])
+                    btn_pump_flow_2.toggle_button_click()
+
+            # PUMP 3    
+            if (payload['sensors'][i]['id'] == "pump_0003"):
+                print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_3} --- {int(payload['sensors'][i]['value'])}")
+                if (val_pump_flow_3 != int(payload['sensors'][i]['value'])):
+                    val_pump_flow_3 = int(payload['sensors'][i]['value'])
+                    btn_pump_flow_3.toggle_button_click()
+
+            # PUMP 4   
+            if (payload['sensors'][i]['id'] == "pump_0004"):
+                print(f"{payload['sensors'][i]['id']} --- {val_pump_1} --- {int(payload['sensors'][i]['value'])}")
+                if (val_pump_1 != int(payload['sensors'][i]['value'])):
+                    val_pump_1 = int(payload['sensors'][i]['value'])
+                    btn_pump_1.toggle_button_click()
+
+            # PUMP 5    
+            if (payload['sensors'][i]['id'] == "pump_0005"):
+                print(f"{payload['sensors'][i]['id']} --- {val_pump_2} --- {int(payload['sensors'][i]['value'])}")
+                if (val_pump_2 != check):
+                    val_pump_2 = check
+                    btn_pump_2.toggle_button_click()
+    else:
+        # PUMP 1
+        if (payload == "flow1"):
+            print(f"{payload} --- {val_pump_flow_1} --- {check}")
+            if (val_pump_flow_1 != check):
+                val_pump_flow_1 = check
+                btn_pump_flow_1.toggle_button_click()
+
+        # PUMP 2
+        if (payload == "flow2"):
+            print(f"{payload} --- {val_pump_flow_2} --- {check}")
+            if (val_pump_flow_2 != check):
+                val_pump_flow_2 = check
+                btn_pump_flow_2.toggle_button_click()
+
+        # PUMP 3    
+        if (payload == "flow3"):
+            print(f"{payload} --- {val_pump_flow_3} --- {check}")
+            if (val_pump_flow_3 != check):
+                val_pump_flow_3 = check
+                btn_pump_flow_3.toggle_button_click()
+
+        # PUMP 4   
+        if (payload == "pump1"):
+            print(f"{payload} --- {val_pump_1} --- {check}")
+            if (val_pump_1 != check):
+                val_pump_1 = check
+                btn_pump_1.toggle_button_click()
+
+        # PUMP 5    
+        if (payload == "pump2"):
+            print(f"{payload} --- {val_pump_2} --- {check}")
+            if (val_pump_2 != check):
+                val_pump_2 = check
+                btn_pump_2.toggle_button_click()
+
+####################################################################################################################################################################
+####################################################################### IRRIGATION SCHEDULE ################################################################################
+####################################################################################################################################################################
+
+def display_irrigation_schedule():
+
+    global child
+    global selected_value_frame_1
+    global sorted_times
+
+    global status
+    global sorted_schedule
+    global schedule_labels
+
+    y_corner = 0.08
+
+    if (selected_value_frame_1.get() == "IRRIGATION SCHEDULE"):
+        string2Frame1.config(text="HISTORY\nCHART\nOF \n_________\nSTATION\nVALUES")
+
+        LabelSchedule = tk.Label(frame1, text="IRRIGATION SCHEDULE", bg="white", anchor="center", font=("Inter", 18, "bold"), fg="brown")
+        LabelSchedule.place(relx=0.105, rely=0.04, relwidth=0.3, relheight=0.03)
+
+        schedule_labels.append(LabelSchedule)
+
+    for i, (start_time, end_time) in enumerate(zip(sorted_times[::2], sorted_times[1::2])):
+        if is_time_passed(end_time):
+            if len(status) < len(sorted_schedule):
+                status.append("Accomplished")
+            else:
+                if is_time_passed(start_time):
+                    if status[i] == "Unfinished":
+                        if sorted_schedule[i].startswith("valve"): 
+                            valve_station_toggle(sorted_schedule[i], 1, 0)
+
+                        if sorted_schedule[i].startswith("flow") or sorted_schedule[i].startswith("pump"):
+                            pump_station_toggle(sorted_schedule[i], 1, 0)
+
+                status[i] = "Accomplished"
+            status_color = "green"
+        else:
+            if len(status) < len(sorted_schedule):
+                status.append("Unfinished")
+            else:
+                status[i] = ("Unfinished")
+            status_color = "red"
+
+        if (selected_value_frame_1.get() == "IRRIGATION SCHEDULE"):
+
+            LabelOrderSchedule = tk.Label(frame1, text=f"Irrigation Schedule {str(i+1).zfill(2)}", bg="white", anchor="w", font=("Inter", 12, "bold"), fg="brown")
+            LabelNameSchedule = tk.Label(frame1, text=f"Machine:     {sorted_schedule[i]}", bg="white", anchor="w", font=("Inter", 12, "bold"), fg="black")
+            LabelStatusSchedule = tk.Label(frame1, text="Status:", bg="white", anchor="w", font=("Inter", 12, "bold"), fg="black")
+            LabelStatusUnfinished = tk.Label(frame1, text=f"{status[i]}", bg="white", anchor="w", font=("Inter", 12, "bold"), fg=f"{status_color}")
+            LabelStartSchedule = tk.Label(frame1, text=f"Start time:   {start_time}", bg="white", anchor="w", font=("Inter", 12, "bold"), fg="black")
+            LabelStopSchedule = tk.Label(frame1, text=f"End time:     {end_time}", bg="white", anchor="w", font=("Inter", 12, "bold"), fg="black")
+
+            if (((i + 1) % 2) != 0):
+                LabelOrderSchedule.place(relx=0.0205, rely=y_corner, relwidth=0.2, relheight=0.1)
+                LabelNameSchedule.place(relx=0.04, rely=y_corner + 0.07, relwidth=0.17, relheight=0.03)
+                LabelStatusSchedule.place(relx=0.04, rely=y_corner + 0.11, relwidth=0.07, relheight=0.03)
+                LabelStatusUnfinished.place(relx=0.12, rely=y_corner + 0.11, relwidth=0.12, relheight=0.03)
+                LabelStartSchedule.place(relx=0.04, rely=y_corner + 0.15, relwidth=0.17, relheight=0.03)
+                LabelStopSchedule.place(relx=0.041, rely=y_corner + 0.19, relwidth=0.17, relheight=0.03)
+
+            else:
+                LabelOrderSchedule.place(relx=0.2605, rely=y_corner, relwidth=0.2, relheight=0.1)
+                LabelNameSchedule.place(relx=0.28, rely=y_corner + 0.07, relwidth=0.17, relheight=0.03)
+                LabelStatusSchedule.place(relx=0.28, rely=y_corner + 0.11, relwidth=0.07, relheight=0.03)
+                LabelStatusUnfinished.place(relx=0.36, rely=y_corner + 0.11, relwidth=0.12, relheight=0.03)
+                LabelStartSchedule.place(relx=0.28, rely=y_corner + 0.15, relwidth=0.17, relheight=0.03)
+                LabelStopSchedule.place(relx=0.281, rely=y_corner + 0.19, relwidth=0.17, relheight=0.03)
+                y_corner += 0.24
+            
+            schedule_labels.extend([LabelOrderSchedule, LabelNameSchedule, LabelStatusSchedule, LabelStatusUnfinished, LabelStartSchedule, LabelStopSchedule])
+
+        if is_time_passed(start_time):
+            if len(status) == len(sorted_schedule):
+                if (status[i] == "Unfinished"):
+                    if sorted_schedule[i].startswith("valve"): 
+                        valve_station_toggle(sorted_schedule[i], 1, 1)
+
+                    if sorted_schedule[i].startswith("flow") or sorted_schedule[i].startswith("pump"):
+                        pump_station_toggle(sorted_schedule[i], 1, 1)
+
+####################################################################################################################################################################
 ####################################################################### UPDATE DATA ################################################################################
 ####################################################################################################################################################################
 
 def mqtt_callback(msg):
 
+    conn = create_connection(database)
+    cur = conn.cursor()
+
     datachange = {'station_id': "water_0001"}
-    global dataset, counter_air_soil, counter_water
+    global dataset
+    global counter_air_soil
+    global counter_water
+    global sorted_times
+    global sorted_schedule
 
-    global btn_valve_1, val_valve_1 
-    global btn_valve_2, val_valve_2 
-    global btn_valve_3, val_valve_3 
-    global btn_pump_flow_1, val_pump_flow_1
-    global btn_pump_flow_2, val_pump_flow_2 
-    global btn_pump_flow_3, val_pump_flow_3
-    global btn_pump_1, val_pump_1
-    global btn_pump_2, val_pump_2
+    global WaterLabelTempValue
+    global WaterLabelSalValue
+    global WaterLabelPHValue
+    global WaterLabelORPValue
+    global WaterLabelECValue
 
-    global AirLabelTempValue, WaterLabelTempValue
-    global AirLabelHumidValue, WaterLabelSalValue
-    global AirLabelLuxValue, WaterLabelPHValue
-    global AirLabelNoiseValue, WaterLabelORPValue
-    global AirLabelPM2Value, WaterLabelECValue
-    global AirLabelPM10Value, SoilLabelTempValue
-    global AirLabelCOValue, SoilLabelHumidValue
-    global AirLabelCO2Value, SoilLabelPHValue 
-    global AirLabelSO2Value, SoilLabelECValue
-    global AirLabelNO2Value, SoilLabelNValue 
-    global AirLabelO3Value, SoilLabelPValue
-    global AirLabelPressureValue, SoilLabelKValue
+    global SoilLabelTempValue
+    global SoilLabelHumidValue
+    global SoilLabelPHValue 
+    global SoilLabelECValue 
+    global SoilLabelNValue 
+    global SoilLabelPValue  
+    global SoilLabelKValue  
+
+    global AirLabelTempValue
+    global AirLabelHumidValue
+    global AirLabelLuxValue
+    global AirLabelNoiseValue
+    global AirLabelPM2Value
+    global AirLabelPM10Value
+    global AirLabelCOValue
+    global AirLabelCO2Value
+    global AirLabelSO2Value 
+    global AirLabelNO2Value
+    global AirLabelO3Value
+    global AirLabelPressureValue
 
     current_time = datetime.now().strftime("%d/%m - %H:%M")
 
@@ -907,71 +1310,31 @@ def mqtt_callback(msg):
         ########################################################## PUMP CONTROLLER #######################################################################
         
         if (payload['station_id'] == "pump_station_0001"):
-            for i in range(len(payload['sensors'])):
-                # print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
-                
-                # PUMP 1
-                if (payload['sensors'][i]['id'] == "pump_0001"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_1} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_pump_flow_1 != int(payload['sensors'][i]['value'])):
-                        val_pump_flow_1 = int(payload['sensors'][i]['value'])
-                        btn_pump_flow_1.toggle_button_click()
-
-                # PUMP 2
-                if (payload['sensors'][i]['id'] == "pump_0002"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_2} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_pump_flow_2 != int(payload['sensors'][i]['value'])):
-                        val_pump_flow_2 = int(payload['sensors'][i]['value'])
-                        btn_pump_flow_2.toggle_button_click()
-
-                # PUMP 3    
-                if (payload['sensors'][i]['id']== "pump_0003"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_pump_flow_3} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_pump_flow_3 != int(payload['sensors'][i]['value'])):
-                        val_pump_flow_3 = int(payload['sensors'][i]['value'])
-                        btn_pump_flow_3.toggle_button_click()
-
-                # PUMP 4   
-                if (payload['sensors'][i]['id']== "pump_0004"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_pump_1} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_pump_1 != int(payload['sensors'][i]['value'])):
-                        val_pump_1 = int(payload['sensors'][i]['value'])
-                        btn_pump_1.toggle_button_click()
-
-                # PUMP 5    
-                if (payload['sensors'][i]['id'] == "pump_0005"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_pump_2} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_pump_2 != int(payload['sensors'][i]['value'])):
-                        val_pump_2 = int(payload['sensors'][i]['value'])
-                        btn_pump_2.toggle_button_click()
+            pump_station_toggle(payload, 0, 0)
         
         ######################################################### VALVE CONTROLLER #######################################################################
         
         if (payload['station_id'] == "valve_station_0001"):
-            for i in range(len(payload['sensors'])):
-                # print(f"{payload['station_id']} --- {payload['station_name']} --- {payload['sensors'][i]['id']} --- {payload['sensors'][i]['value']}")
-                
-                # VALVE 1
-                if (payload['sensors'][i]['id'] == "valve_0001"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_valve_1} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_valve_1 != int(payload['sensors'][i]['value'])):
-                        val_valve_1 = int(payload['sensors'][i]['value'])
-                        btn_valve_1.toggle_button_click()
+            valve_station_toggle(payload, 0, 0) 
 
-                # VALVE 2
-                if (payload['sensors'][i]['id'] == "valve_0002"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_valve_2} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_valve_2 != int(payload['sensors'][i]['value'])):
-                        val_valve_2 = int(payload['sensors'][i]['value'])
-                        btn_valve_2.toggle_button_click()
+        ######################################################## SCHEDULE IRRIGATION #####################################################################
 
-                # VALVE 3    
-                if (payload['sensors'][i]['id']== "valve_0003"):
-                    print(f"{payload['sensors'][i]['id']} --- {val_valve_3} --- {int(payload['sensors'][i]['value'])}")
-                    if (val_valve_3 != int(payload['sensors'][i]['value'])):
-                        val_valve_3 = int(payload['sensors'][i]['value'])
-                        btn_valve_3.toggle_button_click()    
+        if (payload['station_id'] == "sche_0001"):
+            sorted_schedule.clear()
+            sorted_times.clear()
 
+            # Sắp xếp lịch theo thời gian bắt đầu
+            sorted_schedules = sorted(payload["schedule"], key=lambda x: datetime.strptime(x["startTime"], "%H:%M"))
+
+            # In ra danh sách thời gian đã thêm vào từ điển
+            for i, schedule in enumerate(sorted_schedules):
+                sorted_schedule.append(schedule["isActive"])
+                sorted_times.append(schedule['startTime'])
+                sorted_times.append(schedule['stopTime'])
+                print(f"Name: {schedule['schedulerName']} --- IsActive: {schedule['isActive']} --- StartTime: {schedule['startTime']} --- StopTime: {schedule['stopTime']}")
+            
+            # print(f"\nSortedList: {sorted_times}\n")
+        
         ########################################################### STORE VALUE #########################################################################        
     
         if datachange['station_id'] == "water_0001":
@@ -1017,13 +1380,8 @@ def mqtt_callback(msg):
     except Exception as e:
         print(f"Can't get data from the MQTT!!!! - {e}\n")
 
-try:
-    mqttObject = MQTTHelper()
-    threading.Thread(target=mqttObject.setRecvCallBack(mqtt_callback)).start()
-except Exception as e:
-    print(f"Can't connect to MQTT!!!! - {e}\n")
-    
-tree.place(relx=0.51, rely=0.47, relwidth=0.47, relheight=0.51)
+    # Close the connection when done
+    conn.close()
 
 #####################################################################################################################################################################
 ############################################################### CREATE RADIO BUTTONS FRAME 1 ########################################################################
@@ -1046,12 +1404,16 @@ def create_radio_button_frame1():
     style.configure("TRadiobutton", font=radiobutton_font, padding=0, borderwidth=0, background="white")
     style.map("TRadiobutton", background=[('active', 'white')])
 
+    label = tk.Label(frame1, text="SCHEDULE", bg="white", anchor="w", font=("Inter", 15, "bold"))
+    label.place(relx=0.855, rely=0.434, relwidth=0.12, relheight=0.03)
+
+    # Gắn sự kiện cho nhãn
+    label.bind("<Button-1>", on_label_click)
+
     # Increase the size of the circular part
     style.configure("TRadiobutton", indicatorsize=12)
     
     y_offset = 0.08  # Initial value for rely
-
-    print(dataset)
 
     for i in dataset:
         radiobutton1 = ttk.Radiobutton(
@@ -1127,9 +1489,9 @@ def create_button_frame_2():
     elif giatri == "Air & Soil Station":
         station_id = "air_0001"
         station_name = "AIR 0001"
-        if sensor == "Air Temperature":
+        if sensor == "Air Temp":
             current_nodeId = "TEMP_0001"
-        elif sensor == "Air Humidity":
+        elif sensor == "Air Humid":
             current_nodeId = "HUMI_0001"
         elif sensor == "Noise":
             current_nodeId = "NOISE_0001"
@@ -1151,9 +1513,9 @@ def create_button_frame_2():
             current_nodeId = "NO2_0001"
         elif sensor == "O3":
             current_nodeId = "O3_0001"
-        elif sensor == "Soil Temperature":
+        elif sensor == "Soil Temp":
             current_nodeId = "TEMP_0002"
-        elif sensor == "Soil Humidity":
+        elif sensor == "Soil Humid":
             current_nodeId = "HUMI_0002"
         elif sensor == "PH":
             current_nodeId = "PH_0002"
@@ -1207,23 +1569,31 @@ def create_button_frame_2():
         print("Hour: ", x_axis)
         print("Average value: ", y_axis)
             
-        fig, ax = plt.subplots(figsize=(9, 6)) 
-        # Adjust the figsize as needed
-        ax.plot(x_axis, y_axis) 
+        if (len(x_axis) != 0 or len(y_axis) != 0): 
+            fig, ax = plt.subplots(figsize=(9, 6)) 
+            # Adjust the figsize as needed
+            ax.plot(x_axis, y_axis) 
 
-        # Xoay giá trị hiển thị của trục x thẳng đứng
-        plt.gca().tick_params(axis='x', rotation=90)
+            # Xoay giá trị hiển thị của trục x thẳng đứng
+            plt.gca().tick_params(axis='x', rotation=90)
 
-        ax.set_ylabel("Sensors Values")
-        ax.set_xlabel(f"\nTime\n{current_time}")
+            ax.set_ylabel("Sensors Values")
+            ax.set_xlabel(f"\nTime\n{current_time}")
 
-        # Chỉnh sửa để biểu đồ nằm hoàn toàn trong subplot
-        fig.tight_layout()
+            # Chỉnh sửa để biểu đồ nằm hoàn toàn trong subplot
+            fig.tight_layout()
 
-        # Create a canvas widget to display the figure
-        canvas = FigureCanvasTkAgg(fig, master=frame2)
-        canvas.draw()
-        canvas.get_tk_widget().place(relx=0.165, rely=0.02, relwidth=0.82, relheight=0.96)
+            # Create a canvas widget to display the figure
+            canvas = FigureCanvasTkAgg(fig, master=frame2)
+            canvas.draw()
+            canvas.get_tk_widget().place(relx=0.165, rely=0.02, relwidth=0.82, relheight=0.96)
+        else:
+            # Tạo một khung màu trắng lớn
+            white_frame = Frame(frame2, bg="white")
+            white_frame.place(relx=0.17, rely=0.02, relwidth=0.81, relheight=0.94)
+            print(f"\nNO DATA TO LOAD!!!\n")
+            labelCaution = tk.Label(frame2, text="THE DATA FROM THIS SENSOR \nIS UNAVAILABLE!!!!", bg="white", anchor="center", font=("Inter", 25, "bold"), fg="black")
+            labelCaution.place(relx=0.27, rely=0.33, relwidth=0.65, relheight=0.3)
 
     except Exception as e:
         print(f"\nNO DATA TO LOAD!!!\n")
@@ -1241,7 +1611,7 @@ def create_radio_button_frame2():
     global selected_value_frame_2
 
     # Set the desired font size for the Radiobutton text
-    radiobutton_font = ("Inter", 10, "bold")
+    radiobutton_font = ("Inter", 12, "bold")
 
     # Set the desired padding for the Radiobutton
     padding_width = 10
@@ -1287,6 +1657,20 @@ def create_radio_button_frame2():
         y_offset += 0.04
 
     counter = child
+
+try:
+    if (checkLoop == True):
+        checkLoop = False
+        threading.Thread(target=check_time).start()
+        mqttObject = MQTTHelper()
+        threading.Thread(target=mqttObject.setRecvCallBack(mqtt_callback)).start()
+    else:
+        print("Skip Thread!!!")
+except Exception as e:
+    checkLoop = True
+    print(f"Can't connect to MQTT!!!! - {e}\n")
+    
+tree.place(relx=0.51, rely=0.47, relwidth=0.47, relheight=0.51)
 
 # Show Frame 1 initially
 show_frame_1(frame1)
