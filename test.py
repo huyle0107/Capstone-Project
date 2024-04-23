@@ -1,24 +1,14 @@
-import threading
-import requests
+import win32api
+import win32con
 
-def send_sensor_data():
-    counter = 0
-    while True:
-        counter += 1
-        requests.post("http://103.163.25.68:5679/sensor", 
-                      data={'station_id': "air_0001",
-                            'station_name': "AIR 0001",
-                            'sensor_id': "NITO_0002",
-                            'sensor_value': counter})
-        print(counter)
+def mouse_event_callback(event_type, x, y, data, flags):
+    if event_type == win32con.WM_LBUTTONDOWN:
+        print("Left mouse button down at ({}, {})".format(x, y))
 
-# Create and start 100 threads
-threads = []
-for _ in range(100):
-    thread = threading.Thread(target=send_sensor_data)
-    thread.start()
-    threads.append(thread)
+# Register the callback function for mouse events
+win32api.SetCursorPos((0, 0))  # Move the cursor to (0, 0) to ensure it's within the bounds of the window
+win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)  # Simulate a left mouse button down event
+win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)  # Simulate a left mouse button up event
 
-# Wait for all threads to finish (which they never will, since they're infinite loops)
-for thread in threads:
-    thread.join()
+win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)  # Simulate a right mouse button down event
+win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)  # Simulate a right mouse button up event
