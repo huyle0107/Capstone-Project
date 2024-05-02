@@ -14,6 +14,12 @@ float Voltage = 0, Voltage1 = 0, Current = 0, Power = 0;
 float air_TEMP = 0,air_HUMID = 0, air_NOISE = 0, air_PM25 = 0, air_PM10 = 0, air_ATMOSPHERE = 0, air_LUX = 0, air_CO = 0, air_CO2 = 0, air_SO2 = 0, air_NO2 = 0, air_O3 = 0;
 float soil_PH = 0, soil_TEMP = 0, soil_HUMID = 0, soil_N = 0, soil_P = 0, soil_K= 0, soil_EC = 0;
 
+
+// float Voltage = 38.16, Voltage1 = 12.45, Current = 0, Power = 10.23;
+// float air_TEMP = 29.1,air_HUMID = 66.5, air_NOISE = 58.7, air_PM25 = 6, air_PM10 = 7, air_ATMOSPHERE = 101, air_LUX = 5374, air_CO = 2, air_CO2 = 400, air_SO2 = 0, air_NO2 = 1, air_O3 = 3;
+// float soil_PH = 7.22, soil_TEMP = 30.1, soil_HUMID = 17.1, soil_N = 11, soil_P = 16, soil_K= 32, soil_EC = 163;
+
+
 void SoilAirStateMachine(){
   switch(state){
     case INIT:
@@ -21,6 +27,8 @@ void SoilAirStateMachine(){
               SerialNBIOT.begin(NBIOT_baudrate, SERIAL_8N1, NBIOT_RX,NBIOT_TX);
               Serial485.begin(RS485_baudrate, SERIAL_8N1, RS485_RX, RS485_TX);
               setTimer1(timeRead);
+              // setTimer(timeClearBuffer);  //For test
+              // state = CLEAR_BUFFER_PRE; //For test
               state = RELAYON;
               break;
     case RELAYON:
@@ -47,7 +55,7 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   state = WAIT_RELAY;
-                  setTimer(5000);
+                  setTimer(timeWaitRelay);
                 }
 
                 //RS485 response turn off relay
@@ -497,47 +505,61 @@ void SoilAirStateMachine(){
 
     case WAIT_SEND:
               if(timer1_flag){
-                   state = NBIOT_SEND; 
+                   state = NBIOT_RECONNECTION; 
               }
               break;
 
+    case NBIOT_RECONNECTION:
+              NBIOT_CheckConnection();
+              NBIOT_ConnectMQTT();
+              setTimer(timeClearBuffer);
+              state = CLEAR_BUFFER_PRE;
+              break;
+
     case NBIOT_SEND:
+              isListen = true;
               publishData = data.createAirSoilStationJSON(Voltage, Voltage1, Power, air_TEMP,air_HUMID,air_LUX,air_ATMOSPHERE,air_NOISE,air_PM10,air_PM25,air_CO,air_CO2,air_SO2,air_NO2,air_O3,soil_TEMP, soil_HUMID, soil_PH, soil_EC, soil_N, soil_P, soil_K);
               SerialMon.println(publishData);
               NBIOT_publishData(AirStation,publishData);
               state = WAIT_RESPONSE;
               setTimer(timeWaitResponse);
-              setTimer1(timeExecuteResponse);
+              //setTimer1(timeExecuteResponse);
               // state = SYSTEMOFF;
               // setTimer(timeSleep);             
               break;
 
     case WAIT_RESPONSE:
               if(getResponse == true){
+                isListen = false;
                 SerialMon.println("Receive callback");
-                state = CLEAR_BUFFER;
+                setTimer(timeClearBuffer);
+                state = CLEAR_BUFFER_POST;
               }
-              NBIOT_ListenCallback();
               if(timer_flag){
                  resetModule();
               }
               break;
 
-    case  CLEAR_BUFFER:
+    case  CLEAR_BUFFER_PRE:
               NBIOT_clearBuffer();
-              if(timer1_flag){
-                state = SYSTEMOFF;
-                setTimer(timeSleep);
+              if(timer_flag){
+                state = NBIOT_SEND;
               }
               break;
+
+    case  CLEAR_BUFFER_POST:
+              NBIOT_clearBuffer();
+              if(timer_flag){
+                SerialMon.println("SYSTEM OFF");
+                setTimer(timeSleep);
+                state = SYSTEMOFF;
+              }
+              break;   
 
     case SYSTEMOFF:
               if(timer_flag){
                 setTimer1(timeRead);
-<<<<<<< HEAD
-=======
-                // state = READ_VOLTAGE;
->>>>>>> a81a4b293151f37bffbeb96c9226b9716ca3cde0
+                //state = NBIOT_RECONNECTION; //For test
                 state = RELAYON;
               }
               break;

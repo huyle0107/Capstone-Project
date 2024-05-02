@@ -39,7 +39,7 @@ void setup() {
   NBIOT_Init();
   NBIOT_CheckConnection();
   NBIOT_ConnectMQTT();
-  NBIOT_SubTopic(AirStation);
+  //NBIOT_SubTopic(AirStation);
   //sendATCommand("AT+CMQPUB=0,\"/innovation/airmonitoring/WSNs\",1,1,0,39,\"{'temperature': 25.5, 'humidity': 60.2}\"");
  }
 

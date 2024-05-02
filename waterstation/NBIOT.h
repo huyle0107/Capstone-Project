@@ -1,11 +1,10 @@
 #include "Config.h"
 #include <M5Atom.h>
-#include "Timer_Interrupt.h"
 
 extern bool isListen;
 extern bool getResponse;
 
-
+void IRAM_ATTR resetModule();
 void sendATCommand(const char* command);
 String waitAndReadResponse();
 void NBIOT_Init();

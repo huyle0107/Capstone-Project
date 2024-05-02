@@ -4,8 +4,15 @@ bool isListen = false;
 bool getResponse = false;
 
 
+void IRAM_ATTR resetModule() 
+{
+  ets_printf("reboot\n");
+  esp_restart();
+}
+
+
+
 void sendATCommand(const char* command) {
-  setWatchDogTimer();
   SerialMon.println(command);
   //sendATCommand(command);
 
@@ -20,7 +27,6 @@ void sendATCommand(const char* command) {
   if(!(result.indexOf("OK") != -1 || result.indexOf("ER") != -1)){
     result = waitAndReadResponse();
   }
-  resetWatchDogTimer();
 }
 void NBIOT_ListenCallback(){
   String receivedData = "";
@@ -76,7 +82,7 @@ void NBIOT_CheckConnection(){
 void  NBIOT_ConnectMQTT(){
   sendATCommand("AT+CMQTSYNC=1");
   sendATCommand("AT+CMQNEW=\"mqttserver.tk\",\"1883\",12000,1024");\
-  sendATCommand("AT+CMQCON=0,3,\"SoilAir\",600,1,0,\"innovation\",\"Innovation_RgPQAZoA5N\"");
+  sendATCommand("AT+CMQCON=0,3,\"WaterStation\",600,1,0,\"innovation\",\"Innovation_RgPQAZoA5N\"");
 }
 
 void NBIOT_SubTopic(const String& topic){
