@@ -825,6 +825,8 @@ void SoilAirStateMachine(){
               break;
 
     case  CLEAR_BUFFER_PRE:
+              NBIOT_CheckConnection();
+              NBIOT_ConnectMQTT();
               NBIOT_clearBuffer();
               if(timer_flag){
                 state = NBIOT_SEND;
