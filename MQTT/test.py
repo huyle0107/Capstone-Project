@@ -1,71 +1,15 @@
-import sqlite3
-import random
-import string
-import os
+from datetime import datetime
 
-# Hàm tạo kết nối đến database
-def create_connection(db_file):
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        return conn
-    except sqlite3.Error as e:
-        print(e)
-    return conn
+schedules =  {'station_id': 'sche_0001', 'station_name': 'SCHE 0001', 'schedule': [{'schedulerName': 'LỊCH TƯỚI 1', 'isActive': 'flow1', 'startTime': '8:15', 'stopTime': '8:45'}, {'schedulerName': 'LỊCH TƯỚI 2', 'isActive': 'pump2', 'startTime': '18:30', 'stopTime': '18:40'}, {'schedulerName': 'LỊCH TƯỚI 3', 'isActive': 'valve1', 'startTime': '7:15', 'stopTime': '7:45'}]}
 
-# Hàm thêm dữ liệu vào bảng
-def add_employee(conn, employee):
-    sql = ''' INSERT INTO employees(id, name, salary)
-              VALUES(?, ?, ?) '''
-    cur = conn.cursor()
-    cur.execute(sql, employee)
-    conn.commit()
-    return cur.lastrowid
+testList = {}
 
-# Hàm tạo dữ liệu ngẫu nhiên cho employee
-def create_random_employee():
-    id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-    name = ''.join(random.choices(string.ascii_letters, k=10))
-    salary = random.randint(30000, 100000)
-    return (id, name, salary)
+# Sắp xếp lịch theo thời gian bắt đầu
+sorted_schedules = sorted(schedules["schedule"], key=lambda x: datetime.strptime(x["startTime"], "%H:%M"))
 
-
-database = "test.db"
-
-# Kiểm tra nếu file test.db không tồn tại, tạo mới và thêm dữ liệu
-if not os.path.exists(database):
-    print("File test.db chưa tồn tại. Tạo mới file và thêm dữ liệu.")
-    conn = create_connection(database)
-    
-    with conn:
-        cur = conn.cursor()
-        cur.execute('''CREATE TABLE IF NOT EXISTS employees (
-                            id TEXT PRIMARY KEY,
-                            name TEXT NOT NULL,
-                            salary INTEGER NOT NULL
-                        )''')
-
-        for _ in range(5):
-            employee = create_random_employee()
-            add_employee(conn, employee)
-        
-        print("Dữ liệu đã được thêm vào bảng employees.")
-
-
-# Thêm dữ liệu mới liên tục
-while True:
-    conn = create_connection(database)
-    employee = create_random_employee()
-    with conn:
-        add_employee(conn, employee)
-        print(f"Dữ liệu mới được thêm vào bảng employees: {employee}")
-        
-# Kết nối đến file test.db và truy vấn dữ liệu
-# conn = create_connection(database)
-# with conn:
-#     cur = conn.cursor()
-#     cur.execute("SELECT * FROM employees")
-#     rows = cur.fetchall()
-#     print("Dữ liệu trong bảng employees:")
-#     for row in rows:
-#         print(row)
+# In ra danh sách thời gian đã thêm vào từ điển
+print("Sorted schedules:")
+for i, schedule in enumerate(sorted_schedules):
+    schedule_name = schedule["schedulerName"]
+    testList[schedule_name] = {"isActive": schedule["isActive"], "startTime": schedule["startTime"], "stopTime": schedule["stopTime"]}
+    print(f"Name: {schedule_name} --- IsActive: {schedule['isActive']} --- StartTime: {schedule['startTime']} --- StopTime: {schedule['stopTime']}")

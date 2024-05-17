@@ -9,6 +9,7 @@ String publishData;
 
 State state =  INIT;
 State pre_state = state;
+int count_error = 0;
 
 float Voltage = 0, Voltage1 = 0, Current = 0, Power = 0;
 float air_TEMP = 0,air_HUMID = 0, air_NOISE = 0, air_PM25 = 0, air_PM10 = 0, air_ATMOSPHERE = 0, air_LUX = 0, air_CO = 0, air_CO2 = 0, air_SO2 = 0, air_NO2 = 0, air_O3 = 0;
@@ -42,9 +43,90 @@ void SoilAirStateMachine(){
     case WAIT_SENSOR:
               if(timer_flag == 1){
                 state = pre_state;
+                count_error = count_error + 1; 
+                if(count_error == 10){
+                  count_error = 0;
+                //RS485 response read VOLTAGE
+                  if(pre_state == READ_VOLTAGE){
+                    state = READ_CURRENT;
+                  }   
+
+                  //RS485 response read VOLTAGE
+                  if(pre_state == READ_CURRENT){
+                    state = READ_AIR_TEMP_HUMID;
+                  }               
+                    
+                  //RS485 response read AIR_TEMP_HUMID
+                  if(pre_state == READ_AIR_TEMP_HUMID){
+                    state = READ_AIR_NOISE;
+                  }
+
+
+                  //RS485 response read AIR_NOISE
+                  if(pre_state == READ_AIR_NOISE){
+                    state = READ_AIR_PM25_PM10;
+                  }
+
+                  //RS485 response read AIR_PM25_PM10
+                  if(pre_state == READ_AIR_PM25_PM10){
+                    state = READ_AIR_ATMOSPHERE;
+                  }
+
+                  //RS485 response read AIR_ATMOSPHERE
+                  if(pre_state == READ_AIR_ATMOSPHERE){
+                    state = READ_AIR_ILLUMINANCE;
+                  }
+
+                  
+                  //RS485 response read AIR_ATMOSPHERE
+                  if(pre_state == READ_AIR_ILLUMINANCE){
+                    state = READ_AIR_CO;
+                  }
+
+                  //RS485 response read AIR_CO
+                  if(pre_state == READ_AIR_CO){
+                    state = READ_AIR_CO2;
+                  }
+
+                  //RS485 response read AIR_CO2
+                  if(pre_state == READ_AIR_CO2){
+                    state = READ_AIR_SO2;
+                  }
+
+                  //RS485 response read AIR_SO2
+                  if(pre_state == READ_AIR_SO2){
+                    state = READ_AIR_NO2;
+                  }          
+                
+                //RS485 response read AIR_NO2
+                  if(pre_state == READ_AIR_NO2){
+                    state = READ_AIR_O3;
+                  }
+
+                //RS485 response read AIR_O3
+                  if(pre_state == READ_AIR_O3){
+                    state = READ_SOIL_TEMP_HUMID;
+                  }   
+
+                //RS485 response read SOIL_TEMP_HUMID
+                  if(pre_state == READ_SOIL_TEMP_HUMID){
+                    state = READ_SOIL_EC;
+                  }        
+
+                //RS485 response read SOIL_EC
+                  if(pre_state == READ_SOIL_EC){
+                    state = READ_SOIL_PH;
+                  }
+
+                //RS485 response read SOIL_PH
+                  if(pre_state == READ_SOIL_PH){
+                    state = READ_SOIL_NPK;
+                  }            
+                }
               }
               if (Serial485.available()) {
                 // RS485 response turn on relay
+                count_error = 0;
                 if(pre_state == RELAYON){
                   uint8_t receivedData[8];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
@@ -69,6 +151,8 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   state = WAIT_SEND;
+                  // setTimer(timeSleep);
+                  // state = SYSTEMOFF;
                 }
 
                 //RS485 response read VOLTAGE
@@ -82,7 +166,7 @@ void SoilAirStateMachine(){
                   }
                   SerialMon.println();
                   SerialMon.print("VOLTAGE LOAD =");
-                  Voltage = int16_t((receivedData[3] << 8 | receivedData[4])) / 100.0;
+                  Voltage = int16_t((receivedData[3] << 8 | receivedData[4])) / 700.0;
                   SerialMon.println(data.floatToString(Voltage));
 
                   SerialMon.print("VOLTAGE BATTERY =");
@@ -115,12 +199,26 @@ void SoilAirStateMachine(){
                   
                 //RS485 response read AIR_TEMP_HUMID
                 if(pre_state == READ_AIR_TEMP_HUMID){
+                  uint8_t* request = data485.getDataAIR_HUMID_TEMP();
+                  SerialMon.print("Request: ");
+                  for (int i = 0; i < 8; i++) {
+                    SerialMon.print("0x");
+                    if (request[i] < 0x10) {
+                      SerialMon.print("0");
+                    }
+                    SerialMon.print(request[i], HEX);
+                    if (i < 8 - 1) {
+                      SerialMon.print(", ");
+                    }
+                  }
+                  SerialMon.println();
+                  SerialMon.print("Response: ");
                   uint8_t receivedData[9];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <9 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if (i < 8) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR TEMP =");
@@ -136,12 +234,26 @@ void SoilAirStateMachine(){
 
                 //RS485 response read AIR_NOISE
                 if(pre_state == READ_AIR_NOISE){
+                  uint8_t* request = data485.getDataAIR_NOISE();
+                  SerialMon.print("Request: ");
+                  for (int i = 0; i < 8; i++) {
+                    SerialMon.print("0x");
+                    if (request[i] < 0x10) {
+                      SerialMon.print("0");
+                    }
+                    SerialMon.print(request[i], HEX);
+                    if (i < 8 - 1) {
+                      SerialMon.print(", ");
+                    }
+                  }
+                  SerialMon.println();
+                  SerialMon.print("Response: ");
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if (i < 6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR NOISE =");
@@ -152,12 +264,26 @@ void SoilAirStateMachine(){
 
                 //RS485 response read AIR_PM25_PM10
                 if(pre_state == READ_AIR_PM25_PM10){
+                      uint8_t* request = data485.getDataAIR_PM25_PM10();
+                      SerialMon.print("Request: ");
+                      for (int i = 0; i < 8; i++) {
+                        SerialMon.print("0x");
+                        if (request[i] < 0x10) {
+                          Serial1.print("0");
+                        }
+                        SerialMon.print(request[i], HEX);
+                        if (i < 8 - 1) {
+                          SerialMon.print(", ");
+                        }
+                      }
+                      SerialMon.println();
+                      SerialMon.print("Response: ");
                   uint8_t receivedData[9];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <9 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if (i < 8) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR PM10 =");
@@ -172,12 +298,26 @@ void SoilAirStateMachine(){
 
                 //RS485 response read AIR_ATMOSPHERE
                 if(pre_state == READ_AIR_ATMOSPHERE){
+                  uint8_t* request = data485.getDataAIR_ATMOSPHERE();
+                  SerialMon.print("Request: ");
+                  for (int i = 0; i < 8; i++) {
+                    SerialMon.print("0x");
+                    if (request[i] < 0x10) {
+                      Serial1.print("0");
+                    }
+                    SerialMon.print(request[i], HEX);
+                    if (i < 8 - 1) {
+                      SerialMon.print(", ");
+                    }
+                  }
+                  SerialMon.println();
+                  SerialMon.print("Response: "); 
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if (i < 6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR ATMOSPHERE =");
@@ -189,12 +329,26 @@ void SoilAirStateMachine(){
                 
                 //RS485 response read AIR_ATMOSPHERE
                 if(pre_state == READ_AIR_ILLUMINANCE){
+                    uint8_t* request = data485.getDataAIR_LUX();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: ");
                   uint8_t receivedData[9];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <9 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                     if (i < 8) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("LUX =");
@@ -205,12 +359,26 @@ void SoilAirStateMachine(){
 
                 //RS485 response read AIR_CO
                 if(pre_state == READ_AIR_CO){
+                    uint8_t* request = data485.getDataAIR_CO();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: ");                 
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if (i < 6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR CO =");
@@ -221,12 +389,26 @@ void SoilAirStateMachine(){
 
                 //RS485 response read AIR_CO2
                 if(pre_state == READ_AIR_CO2){
+                    uint8_t* request = data485.getDataAIR_CO2();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: ");                  
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i < 6 ) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR CO2 =");
@@ -237,12 +419,26 @@ void SoilAirStateMachine(){
 
                 //RS485 response read AIR_SO2
                 if(pre_state == READ_AIR_SO2){
+                    uint8_t* request = data485.getDataAIR_SO2();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: "); 
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i<6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR SO2 =");
@@ -253,12 +449,26 @@ void SoilAirStateMachine(){
                
                //RS485 response read AIR_NO2
                 if(pre_state == READ_AIR_NO2){
+                    uint8_t* request = data485.getDataAIR_NO2();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: "); 
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i<6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR NO2 =");
@@ -269,12 +479,26 @@ void SoilAirStateMachine(){
 
                //RS485 response read AIR_O3
                 if(pre_state == READ_AIR_O3){
+                    uint8_t* request = data485.getDataAIR_O3();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: "); 
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i<6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("AIR O3 =");
@@ -285,12 +509,26 @@ void SoilAirStateMachine(){
 
                //RS485 response read SOIL_TEMP_HUMID
                 if(pre_state == READ_SOIL_TEMP_HUMID){
+                    uint8_t* request = data485.getDataSOIL_HUMID_TEMP();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: "); 
                   uint8_t receivedData[9];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <9 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i<8) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("SOIL TEMP =");
@@ -305,12 +543,26 @@ void SoilAirStateMachine(){
 
                //RS485 response read SOIL_EC
                 if(pre_state == READ_SOIL_EC){
+                    uint8_t* request = data485.getDataSOIL_EC();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: ");                  
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i<6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("Soil_EC =");
@@ -321,12 +573,26 @@ void SoilAirStateMachine(){
 
                //RS485 response read SOIL_PH
                 if(pre_state == READ_SOIL_PH){
+                    uint8_t* request = data485.getDataSOIL_PH();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: "); 
                   uint8_t receivedData[7];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <7 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i<6) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("SOIL PH =");
@@ -337,12 +603,26 @@ void SoilAirStateMachine(){
 
                //RS485 response read SOIL_NPK
                 if(pre_state == READ_SOIL_NPK){
+                    uint8_t* request = data485.getDataSOIL_NPK();
+                    SerialMon.print("Request: ");
+                    for (int i = 0; i < 8; i++) {
+                      SerialMon.print("0x");
+                      if (request[i] < 0x10) {
+                        SerialMon.print("0");
+                      }
+                      SerialMon.print(request[i], HEX);
+                      if (i < 8 - 1) {
+                        SerialMon.print(", ");
+                      }
+                    }
+                    SerialMon.println();
+                    SerialMon.print("Response: "); 
                   uint8_t receivedData[11];
                   Serial485.readBytes(receivedData, sizeof(receivedData));  // Read the message.
                   for (int i = 0; i <11 ; i++) {
                     SerialMon.print("0x");
                     SerialMon.print(receivedData[i], HEX);
-                    SerialMon.print(", ");
+                    if(i<10) SerialMon.print(", ");
                   }
                   SerialMon.println();
                   SerialMon.print("Soil_N =");
@@ -356,6 +636,8 @@ void SoilAirStateMachine(){
                   SerialMon.print("Soil_K =");
                   soil_K = int16_t((receivedData[7] << 8 | receivedData[8]));
                   SerialMon.println(data.floatToString(soil_K));
+                  // state = SYSTEMOFF;
+                  // setTimer(timeSleep);
                   state = RELAYOFF;
                 }              
               }
@@ -364,6 +646,7 @@ void SoilAirStateMachine(){
     case WAIT_RELAY:
               if(timer_flag == 1){
                 state = READ_VOLTAGE;
+                //state = READ_AIR_TEMP_HUMID;
               }
               break;
 
@@ -505,7 +788,8 @@ void SoilAirStateMachine(){
 
     case WAIT_SEND:
               if(timer1_flag){
-                   state = NBIOT_RECONNECTION; 
+                  setTimer(timeClearBuffer);
+                  state = CLEAR_BUFFER_PRE;
               }
               break;
 
@@ -560,6 +844,7 @@ void SoilAirStateMachine(){
               if(timer_flag){
                 setTimer1(timeRead);
                 //state = NBIOT_RECONNECTION; //For test
+                // state = READ_VOLTAGE;
                 state = RELAYON;
               }
               break;

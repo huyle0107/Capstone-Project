@@ -1,35 +1,39 @@
-[
-  {
-    "cycle": 5,
-    "flow1": 20,
-    "flow2": 10,
-    "flow3": 20,
-    "isActive": true,
-    "schedulerName": "LỊCH TƯỚI 1",
-    "startTime": "18:30",
-    "stopTime": "18:40"
-  },
-  {
-    "cycle": 120,
-    "flow1": 50,
-    "flow2": 20,
-    "flow3": 20,
-    "isActive": false,
-    "schedulerName": "LỊCH TƯỚI 2",
-    "startTime": "8:15",
-    "stopTime": "8:45"
-  },
-  {
-    "cycle": 15,
-    "flow1": 20,
-    "flow2": 20,
-    "flow3": 20,
-    "isActive": false,
-    "schedulerName": "LỊCH TƯỚI 3",
-    "startTime": "7:15",
-    "stopTime": "7:45"
-  }
-]
+{
+    "station_id": "sche_0001",
+    "station_name": "SCHE 0001",
+    "schedule": [
+        {
+            "cycle": 5,
+            "flow1": 20,
+            "flow2": 10,
+            "flow3": 20,
+            "isActive": True,
+            "schedulerName": "LỊCH TƯỚI 1",
+            "startTime": "18:30",
+            "stopTime": "18:40"
+        },
+        {
+            "cycle": 120,
+            "flow1": 50,
+            "flow2": 20,
+            "flow3": 20,
+            "isActive": False,
+            "schedulerName": "LỊCH TƯỚI 2",
+            "startTime": "8:15",
+            "stopTime": "8:45"
+        },
+        {
+            "cycle": 15,
+            "flow1": 20,
+            "flow2": 20,
+            "flow3": 20,
+            "isActive": False,
+            "schedulerName": "LỊCH TƯỚI 3",
+            "startTime": "7:15",
+            "stopTime": "7:45"
+        }
+    ]
+}
 
 Nguyên lý của mỗi lịch tưới:
 

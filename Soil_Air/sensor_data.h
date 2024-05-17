@@ -24,6 +24,7 @@ class SENSOR_RS485{
   uint8_t* read_Voltage;
   uint8_t* read_Current;
 
+  uint8_t* data_air;
   uint8_t* data_air_HUMID_TEMP;
   uint8_t* data_air_NOISE;
   uint8_t* data_air_PM25_PM10;
@@ -56,6 +57,7 @@ class SENSOR_RS485{
   uint8_t* read_Vol();
   uint8_t* read_Cur();
 
+  uint8_t* getDataAIR();
   uint8_t* getDataAIR_HUMID_TEMP();
   uint8_t* getDataAIR_NOISE();
   uint8_t* getDataAIR_PM25_PM10();

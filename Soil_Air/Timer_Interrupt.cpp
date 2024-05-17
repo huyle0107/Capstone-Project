@@ -7,12 +7,21 @@ int timer1_counter = 0;
 int timer1_flag = 0;
 
 int timer_Watchdog = 0;
+
+void IRAM_ATTR resetModule() 
+{
+  ets_printf("reboot\n");
+  esp_restart();
+}
 void setWatchDogTimer(){
   timer_Watchdog = WatchDogTime;
 }
 void resetWatchDogTimer(){
   timer_Watchdog = -282;
 }
+
+
+
 
 void setTimer(int duration){
   timer_counter = duration;
@@ -47,8 +56,3 @@ void timerRun(){
   }
 }
 
-void IRAM_ATTR resetModule() 
-{
-  ets_printf("reboot\n");
-  esp_restart();
-}

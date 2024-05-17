@@ -44,6 +44,13 @@ extern State pre_state;
 extern State state;
 extern String publishData;
 
+extern SENSOR_DATA data;
+// Class Data for read value
+extern SENSOR_RS485 data485;
+
+extern float Voltage, Voltage1, Current, Power, air_TEMP, air_HUMID, air_NOISE, air_PM25, air_PM10, air_ATMOSPHERE, air_LUX, air_CO, air_CO2, air_SO2, air_NO2, air_O3;
+extern float soil_PH, soil_TEMP, soil_HUMID, soil_N, soil_P, soil_K, soil_EC;
+
 
 // Class Data for read value
 extern SENSOR_RS485 air_data485;
