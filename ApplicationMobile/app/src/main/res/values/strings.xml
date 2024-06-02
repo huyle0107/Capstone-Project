@@ -1,10 +1,20 @@
 <resources>
     <string name="app_name">CapstoneProject</string>
-    <string name="menu_home">Home</string>
+    <string name="menu_home">Sensors</string>
     <string name="menu_course">Control</string>
     <string name="menu_account">Schedule</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="sensor_string">Sensor</string>
     <string name="control_string">Control</string>
     <string name="schedule_string">Schedule</string>
+    <string-array name="options">
+        <item>pump1</item>
+        <item>pump2</item>
+        <item>pump3</item>
+        <item>pump4</item>
+        <item>pump5</item>
+        <item>valve1</item>
+        <item>valve2</item>
+        <item>valve3</item>
+    </string-array>
 </resources>

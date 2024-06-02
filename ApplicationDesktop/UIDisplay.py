@@ -166,97 +166,161 @@ m485 = Utilities.modbus485.Modbus485(ser)
 def btn_valve_1_onClick(state):
     global mqttObject
     global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
+    global val_pump_2
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3 
     print("Button1 is click", state)
     if state:
         m485.modbus485_send(relay1_ON)
     else:
         m485.modbus485_send(relay1_OFF)
+    state = 1 if state else 0
     val_valve_1 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0001", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 def btn_valve_2_onClick(state):
     global mqttObject
+    global val_valve_1 
     global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
+    global val_pump_2
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3 
     print("Button2 is click", state)
     if state:
         m485.modbus485_send(relay2_ON)
     else:
         m485.modbus485_send(relay2_OFF)
+    state = 1 if state else 0
     val_valve_2 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0002", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 def btn_valve_3_onClick(state):
     global mqttObject
-    global val_valve_3
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
+    global val_pump_2
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3 
     print("Button3 is click", state)
     if state:
         m485.modbus485_send(relay3_ON)
     else:
         m485.modbus485_send(relay3_OFF)
+    state = 1 if state else 0
     val_valve_3 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/valvecontroller", "valve_0003", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 def btn_pump_flow_1_onClick(state):
     global mqttObject
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
+    global val_pump_2
     global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3 
     print("Flow 1 is click", state)
     if state:
         m485.modbus485_send(relay4_ON)
     else:
         m485.modbus485_send(relay4_OFF)
+    state = 1 if state else 0
     val_pump_flow_1 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0001", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 def btn_pump_flow_2_onClick(state):
     global mqttObject
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
+    global val_pump_2
+    global val_pump_flow_1
     global val_pump_flow_2 
+    global val_pump_flow_3  
     print("Flow 2 is click", state)
     if state:
         m485.modbus485_send(relay5_ON)
     else:
         m485.modbus485_send(relay5_OFF)
+    state = 1 if state else 0
     val_pump_flow_2 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0002", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 def btn_pump_flow_3_onClick(state):
     global mqttObject
-    global val_pump_flow_3
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
+    global val_pump_2
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3  
     print("Flow 3 is click", state)
     if state:
         m485.modbus485_send(relay6_ON)
     else:
         m485.modbus485_send(relay6_OFF)
+    state = 1 if state else 0
     val_pump_flow_3 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0003", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 def btn_pump_1_onClick(state):
     global mqttObject
-    global val_pump_1 
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
+    global val_pump_2
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3 
     print("Pump 1 is click", state)
     if state:
         m485.modbus485_send(relay7_ON)
     else:
         m485.modbus485_send(relay7_OFF)
+    state = 1 if state else 0
     val_pump_1 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0004", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 def btn_pump_2_onClick(state):
     global mqttObject
+    global val_valve_1 
+    global val_valve_2 
+    global val_valve_3 
+    global val_pump_1
     global val_pump_2
+    global val_pump_flow_1
+    global val_pump_flow_2 
+    global val_pump_flow_3 
     print("Pump 2 is click", state)
     if state:
         m485.modbus485_send(relay8_ON)
     else:
         m485.modbus485_send(relay8_OFF)
+    state = 1 if state else 0
     val_pump_2 = state
-    mqttObject.mqtt_published(mqttObject.mqttClient, "/innovation/pumpcontroller", "pump_0005", state)
+    mqttObject.mqtt_published(mqttObject.mqttClient, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3)
     pass
 
 ####################################################################################################################################################################
@@ -857,8 +921,8 @@ def pump_station_toggle(payload, condition, check):
             # PUMP 5    
             if (payload['sensors'][i]['id'] == "pump_0005"):
                 print(f"{payload['sensors'][i]['id']} --- {val_pump_2} --- {int(payload['sensors'][i]['value'])}")
-                if (val_pump_2 != check):
-                    val_pump_2 = check
+                if (val_pump_2 != int(payload['sensors'][i]['value'])):
+                    val_pump_2 = int(payload['sensors'][i]['value'])
                     btn_pump_2.toggle_button_click()
     else:
         # PUMP 1
@@ -1499,7 +1563,7 @@ def create_button_frame_2():
             current_nodeId = "PM2.5_0001"
         elif sensor == "PM10":
             current_nodeId = "PM10_0001"
-        elif sensor == "ATMOSPHERE":
+        elif sensor == "ATM":
             current_nodeId = "ATMOSPHERE_0001"
         elif sensor == "Lux":
             current_nodeId = "ILLUMINANCE_0001"

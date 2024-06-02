@@ -36,20 +36,44 @@ class MQTTHelper:
     def mqtt_subscribed(self, client, userdata, mid, granted_qos):
         print("\nSubscribed to Topic!!!")
 
-    def mqtt_published(self, client, topic, id, value):
-        if (topic == self.MQTT_TOPIC_PUB_PUMP):
-            print(f"Publish [{id} --- {value}] to Topic!!!\n")
-            data = json.loads(json_pump.replace("'", '"'))
-            
-        if (topic == self.MQTT_TOPIC_PUB_VALVE):
-            print(f"Publish [{id} --- {value}] to Topic!!!\n")
-            data = json.loads(json_valve.replace("'", '"'))
+    def mqtt_published(self, client, val_pump_1, val_pump_2, val_valve_1, val_valve_2, val_valve_3, val_pump_flow_1, val_pump_flow_2, val_pump_flow_3):
+        val_pump_1 = "1" if val_pump_1 else "0"
+        val_pump_2 = "1" if val_pump_2 else "0"
+        val_valve_1 = "1" if val_valve_1 else "0"
+        val_valve_2 = "1" if val_valve_2 else "0"
+        val_valve_3 = "1" if val_valve_3 else "0"
+        val_pump_flow_1 = "1" if val_pump_flow_1 else "0"
+        val_pump_flow_2 = "1" if val_pump_flow_2 else "0"
+        val_pump_flow_3 = "1" if val_pump_flow_3 else "0"
 
-        for sensor in data.get('sensors', []):
-            if sensor['id'] == id:
-                sensor['value'] = value
+        datapump = json.loads(json_pump.replace("'", '"'))
+        datavalve = json.loads(json_valve.replace("'", '"'))
 
-        client.publish(topic, json.dumps(data))
+        for sensor in datapump.get('sensors', []):
+            if sensor['id'] == 'pump_0001':
+                sensor['value'] = val_pump_flow_1 
+            if sensor['id'] == 'pump_0002':
+                sensor['value'] = val_pump_flow_2
+            if sensor['id'] == 'pump_0003':
+                sensor['value'] = val_pump_flow_3
+            if sensor['id'] == 'pump_0004':
+                sensor['value'] = val_pump_1
+            if sensor['id'] == 'pump_0005':
+                sensor['value'] = val_pump_2
+        
+        for sensor in datavalve.get('sensors', []):
+            if sensor['id'] == 'valve_0001':
+                sensor['value'] = val_valve_1
+            if sensor['id'] == 'valve_0002':
+                sensor['value'] = val_valve_2
+            if sensor['id'] == 'valve_0003':
+                sensor['value'] = val_valve_3
+
+        print("Publish ---1---- ", datapump)
+        print("Publish ---2---- ", datavalve)
+
+        client.publish(self.MQTT_TOPIC_PUB_PUMP, json.dumps(datapump))
+        client.publish(self.MQTT_TOPIC_PUB_VALVE, json.dumps(datavalve))
 
     def mqtt_recv_message(self, client, userdata, message):
         self.recvCallBack(message)

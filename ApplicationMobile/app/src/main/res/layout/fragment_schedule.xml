@@ -6,12 +6,46 @@
     tools:context=".ScheduleFragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/schedule_string"
-        android:textSize="36sp"
-        android:gravity="center"
-        android:textColor="@color/white"/>
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp">
+
+        <TextView
+            android:id="@+id/text_title"
+            android:layout_width="290dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/rounded_background"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="Create new schedule"
+            android:textColor="@color/black"
+            android:textSize="25sp"
+            android:textStyle="bold"></TextView>
+
+        <TextView
+            android:id="@+id/text_title_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/text_title"
+            android:fontFamily="@font/poppins_medium"
+            android:text="Available Schedule"
+            android:textColor="@color/white"
+            android:layout_margin="5dp"
+            android:textSize="25sp"
+            android:textStyle="bold">
+
+        </TextView>
+        <androidx.recyclerview.widget.RecyclerView
+            android:layout_below = "@+id/text_title_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginBottom="55dp"
+            android:id="@+id/ScheduleRecyclerView">
+        </androidx.recyclerview.widget.RecyclerView>
+    </RelativeLayout>
 
 </FrameLayout>

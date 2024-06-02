@@ -8,7 +8,7 @@ android {
     defaultConfig {
         applicationId "android.folder.capstoneproject"
         minSdk 21
-        targetSdk 31
+        targetSdk 21
         versionCode 1
         versionName "1.0"
 
@@ -44,4 +44,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.25'
     implementation 'com.github.bumptech.glide:glide:4.15.1'
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
+    implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
+    implementation 'com.jakewharton.threetenabp:threetenabp:1.2.4'
 }

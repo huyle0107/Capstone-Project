@@ -4,23 +4,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="10dp"
+    android:layout_margin="5dp"
     android:id="@+id/layout_item"
-    android:background="@color/white">
+    android:background="@drawable/rounded_background"
+    android:elevation="4dp">
 
     <ImageView
         android:id="@+id/img_background_sensors"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
         android:layout_gravity="center"
         android:layout_margin="10dp"
-        android:src="@drawable/temp">
+        android:src="@drawable/co2">
     </ImageView>
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
         android:layout_toRightOf="@+id/img_background_sensors"
         android:orientation="vertical"
         android:layout_gravity="center">
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/poppins_medium"
             android:textColor="@color/black"
-            android:textSize="20sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             tools:text="Temperature">
         </TextView>
@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/poppins_light"
             android:textColor="@color/Gray"
-            android:textSize="17sp"
+            android:textSize="13sp"
             tools:text="30°C"
             android:textStyle="bold">
         </TextView>
