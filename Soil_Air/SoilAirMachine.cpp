@@ -794,6 +794,7 @@ void SoilAirStateMachine(){
               break;
 
     case NBIOT_RECONNECTION:
+              NBIOT_Init();
               NBIOT_CheckConnection();
               NBIOT_ConnectMQTT();
               setTimer(timeClearBuffer);
@@ -807,6 +808,7 @@ void SoilAirStateMachine(){
               NBIOT_publishData(AirStation,publishData);
               state = WAIT_RESPONSE;
               setTimer(timeWaitResponse);
+            
               //setTimer1(timeExecuteResponse);
               // state = SYSTEMOFF;
               // setTimer(timeSleep);             
@@ -824,11 +826,13 @@ void SoilAirStateMachine(){
               }
               break;
 
-    case  CLEAR_BUFFER_PRE:
-              NBIOT_CheckConnection();
-              NBIOT_ConnectMQTT();
-              NBIOT_clearBuffer();
-              if(timer_flag){
+    case CLEAR_BUFFER_PRE:
+              if(timer_flag)
+              {
+                NBIOT_Init();
+                NBIOT_CheckConnection();
+                NBIOT_ConnectMQTT();
+                NBIOT_clearBuffer();
                 state = NBIOT_SEND;
               }
               break;

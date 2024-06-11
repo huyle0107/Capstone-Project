@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.MenuItem;
@@ -26,6 +27,11 @@ public class MainActivity extends AppCompatActivity {
 
     BottomNavigationView bottomNavigationView;
     FragmentManager fragmentManager;
+    JSONArray scheduleArray = new JSONArray();
+    JSONObject data_push = new JSONObject();
+    SharedPreferences sharedPreferences;
+    String temp = "hi";
+    String jsonData = "{\"station_id\":\"sche_0001\",\"station_name\":\"SCHE 0001\",\"schedule\":[]}";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,51 +45,49 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.bottom_nav);
 
+        sharedPreferences = getSharedPreferences("MyAppName", MODE_PRIVATE);
+        temp = sharedPreferences.getString("logged", temp);
+
         if (getIntent() != null)
         {
-            String selectedOption = getIntent().getStringExtra("Option");
-            String Starttime = getIntent().getStringExtra("Starttime");
-            String Endtime = getIntent().getStringExtra("Endtime");
+            String option = getIntent().getStringExtra("Option");
+            String startTime = getIntent().getStringExtra("Starttime");
+            String endTime = getIntent().getStringExtra("Endtime");
 
             try {
-                // Tạo JSONObject mới cho lịch trình mới
-                JSONObject newScheduleObject = new JSONObject();
-                newScheduleObject.put("schedulerName", "LỊCH TƯỚI TIÊU");
-                newScheduleObject.put("isActive", selectedOption);
-                newScheduleObject.put("startTime", Starttime);
-                newScheduleObject.put("stopTime", Endtime);
-
-                // Đọc dữ liệu JSON từ Intent (nếu cần) hoặc tạo một JSONObject mới
-                JSONObject data_push;
-                if (getIntent().hasExtra("data_push"))
+                if  (temp.length() == "true".length())
                 {
-                    String jsonData = getIntent().getStringExtra("data_push");
+                    data_push = new JSONObject(sharedPreferences.getString("Data", jsonData));
+                }
+                else
+                {
                     data_push = new JSONObject(jsonData);
                 }
-                else
-                {
-                    data_push = new JSONObject();
-                    data_push.put("station_id", "sche_0001");
-                    data_push.put("station_name", "SCHE 0001");
-                }
 
-                // Kiểm tra xem JSONObject có chứa mảng lịch trình không
-                JSONArray scheduleArray;
-                if (data_push.has("schedule"))
+                if (option != null && startTime != null && endTime != null)
                 {
+                    // Tạo JSONObject mới cho lịch trình mới
+                    JSONObject newScheduleObject = new JSONObject();
+                    newScheduleObject.put("schedulerName", "LỊCH TƯỚI TIÊU");
+                    newScheduleObject.put("isActive", option);
+                    newScheduleObject.put("startTime", startTime);
+                    newScheduleObject.put("stopTime", endTime);
+
+                    // Cập nhật JSONObject chứa mảng lịch trình
                     scheduleArray = data_push.getJSONArray("schedule");
-                }
-                else
-                {
-                    scheduleArray = new JSONArray();
+                    scheduleArray.put(newScheduleObject);
+                    data_push.put("schedule", scheduleArray);
                 }
 
-                // Thêm lịch trình mới vào mảng lịch trình
-                scheduleArray.put(newScheduleObject);
+                System.out.println("||-----jsonData--------- " + data_push);
 
-                // Cập nhật JSONObject chứa mảng lịch trình
-                data_push.put("schedule", scheduleArray);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString("logged", "true");
+                editor.putString("Data", data_push.toString());
+                editor.apply();
+
                 MQTTHelper mqttHelper = new MQTTHelper(getApplicationContext());
+
                 // Khai báo một biến Handler
                 Handler handler = new Handler();
 

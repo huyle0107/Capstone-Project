@@ -33,7 +33,7 @@ import java.util.List;
 
 public class ScheduleFragment extends Fragment {
 
-    private List<ScheduleClass> ScheduleList;
+    private List<ScheduleClass> ScheduleList = new ArrayList<>();
     private RecyclerView ScheduleRecyclerView;
     private ScheduleClassAdapter ScheduleAdapter;
     TextView createNew;
@@ -53,9 +53,6 @@ public class ScheduleFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_schedule, container, false);
 
         AndroidThreeTen.init(getActivity());
-
-        // Khởi tạo danh sách cảm biến
-        ScheduleList = new ArrayList<>();
 
         startMQTT();
 
@@ -80,8 +77,6 @@ public class ScheduleFragment extends Fragment {
 
     private List<ScheduleClass> generateScheduleItem()
     {
-        List<ScheduleClass> ScheduleItems = new ArrayList<>();
-
         // Kiểm tra xem topic_json có null không trước khi truy cập vào nó
         if (topic_json != null)
         {
@@ -106,7 +101,7 @@ public class ScheduleFragment extends Fragment {
                 // So sánh thời gian dừng với thời gian hiện tại
                 if (isCurrentTimeAfter(schedule.stopTime))
                 {
-                    ScheduleItems.add(new ScheduleClass((String) ("Irrigation Schedule " + counter),
+                    ScheduleList.add(new ScheduleClass((String) ("Irrigation Schedule " + counter),
                             "Machine:", schedule.isActive,
                             "Status:", "Unfinished",
                             "Start time: ", schedule.startTime,
@@ -114,7 +109,7 @@ public class ScheduleFragment extends Fragment {
                 }
                 else
                 {
-                    ScheduleItems.add(new ScheduleClass((String) ("Irrigation Schedule " + counter),
+                    ScheduleList.add(new ScheduleClass((String) ("Irrigation Schedule " + counter),
                             "Machine:", schedule.isActive,
                             "Status:", "Accomplished",
                             "Start time: ", schedule.startTime,
@@ -124,7 +119,7 @@ public class ScheduleFragment extends Fragment {
                 counter++;
             }
         }
-        return ScheduleItems;
+        return ScheduleList;
     }
 
     public static boolean isCurrentTimeAfter(String timeStr)
@@ -146,7 +141,7 @@ public class ScheduleFragment extends Fragment {
         // Chuyển đổi giờ và phút thành giây
         int totalSeconds = (hoursCom * 3600) + (minutesCom * 60);
 
-        System.out.print(totalSeconds + "------" + totalSecondsCuerrent);
+        //System.out.print(totalSeconds + "------" + totalSecondsCuerrent);
 
         if (totalSeconds > totalSecondsCuerrent)
         {
@@ -177,11 +172,7 @@ public class ScheduleFragment extends Fragment {
                 {
                     Log.d(TAG, "Message received on topic: " + topic + " - " + message);
                     topic_json = message.toString();
-                    if (!ScheduleList.isEmpty())
-                    {
-                        ScheduleList.clear();
-                    }
-                    ScheduleList.addAll(0, generateScheduleItem());
+                    generateScheduleItem();
                     ScheduleAdapter.notifyDataSetChanged();
                 }
             }
